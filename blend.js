@@ -1291,7 +1291,138 @@ function runChainStep(steps, idx) {
   S._pendingSteps = steps;
   S._pendingIdx = idx;
 
-  setTimeout(() => phase1(), 200);
+  setupHeaderEmojiDrag(S.steps.indexOf(step));
+}
+
+function setupHeaderEmojiDrag(headerStepIdx) {
+  const itemEl = document.getElementById(`emoji-header-item-${headerStepIdx}`);
+  const emojiHeaderBar = document.getElementById('emoji-header-bar');
+  if (emojiHeaderBar) emojiHeaderBar.classList.remove('hidden');
+
+  // Reveal top header bar on mobile theater overlay if active
+  const mobileOverlay = document.getElementById('mobile-theater-overlay');
+  if (mobileOverlay) mobileOverlay.classList.remove('hide-bar');
+
+  if (!itemEl) return;
+
+  const getEventCoords = (ev) => {
+    if (ev.touches && ev.touches.length > 0) return ev.touches[0];
+    if (ev.changedTouches && ev.changedTouches.length > 0) return ev.changedTouches[0];
+    return ev;
+  };
+
+  const triggerEmojiBlendDrop = (clientX, clientY) => {
+    if (theater) theater.classList.remove('drop-zone-active');
+
+    const isRecording = document.body.classList.contains('recording-mode');
+    const theaterRect = theater.getBoundingClientRect();
+    const centerX = (theaterRect.left + theaterRect.right) / 2;
+    const centerY = (theaterRect.top + theaterRect.bottom) / 2;
+    const dx = clientX - centerX;
+    const dy = clientY - centerY;
+
+    let relX, relY, rotDeg;
+
+    if (isRecording) {
+      // Theater is rotated -90deg in recording mode. Convert screen coords to rotated theater space:
+      relX = (theater.offsetWidth / 2) + dy;
+      relY = (theater.offsetHeight / 2) - dx;
+      rotDeg = -90; // Align upright with rotated character
+    } else {
+      relX = clientX - theaterRect.left;
+      relY = clientY - theaterRect.top;
+      rotDeg = 0;
+    }
+
+    // Fallback bounds check
+    if (isNaN(relX) || relX < 0 || relX > theater.offsetWidth) relX = theater.offsetWidth / 2;
+    if (isNaN(relY) || relY < 0 || relY > theater.offsetHeight) relY = theater.offsetHeight / 2;
+
+    fly2.style.opacity = '1';
+    fly2.style.left = relX + 'px';
+    fly2.style.top = relY + 'px';
+    fly2.style.bottom = 'auto';
+    fly2.style.right = 'auto';
+    fly2.style.width = '48%';
+    fly2.style.transform = `translate(-50%, -50%) rotate(${rotDeg}deg) scale(1.35)`;
+
+    playSfxSwoosh(true);
+    setTimeout(() => {
+      doCollisionFlash();
+    }, 100);
+  };
+
+  // Unified Pointer/Touch drag handling
+  const onDragStart = (e) => {
+    if (!S.running) return;
+    if (e.cancelable) e.preventDefault();
+
+    const coords = getEventCoords(e);
+    const imgSrc = S._currentEmojiImg ? S._currentEmojiImg.src : '';
+    if (!imgSrc) return;
+
+    const isRecording = document.body.classList.contains('recording-mode');
+    const rotDeg = isRecording ? -90 : 0;
+    const dragSize = theater ? Math.round(theater.offsetWidth * 0.48) : 180;
+
+    const ghost = document.createElement('img');
+    ghost.src = imgSrc;
+    ghost.className = 'drag-emoji-ghost';
+    ghost.style.cssText = `
+      position: fixed;
+      width: ${dragSize}px;
+      height: ${dragSize}px;
+      object-fit: contain;
+      pointer-events: none;
+      z-index: 99999;
+      transform: translate(-50%, -50%) rotate(${rotDeg}deg) scale(1.35);
+      filter: drop-shadow(0 14px 28px rgba(124, 58, 237, 0.65));
+      left: ${coords.clientX}px;
+      top: ${coords.clientY}px;
+    `;
+    document.body.appendChild(ghost);
+
+    if (theater) theater.classList.add('drop-zone-active');
+
+    const onDragMove = (moveEv) => {
+      if (moveEv.cancelable) moveEv.preventDefault();
+      const moveCoords = getEventCoords(moveEv);
+      ghost.style.left = moveCoords.clientX + 'px';
+      ghost.style.top = moveCoords.clientY + 'px';
+    };
+
+    const onDragEnd = (endEv) => {
+      window.removeEventListener('pointermove', onDragMove);
+      window.removeEventListener('pointerup', onDragEnd);
+      window.removeEventListener('touchmove', onDragMove);
+      window.removeEventListener('touchend', onDragEnd);
+      window.removeEventListener('touchcancel', onDragEnd);
+      ghost.remove();
+
+      itemEl.removeEventListener('pointerdown', onDragStart);
+      itemEl.removeEventListener('touchstart', onDragStart);
+
+      const endCoords = getEventCoords(endEv);
+      triggerEmojiBlendDrop(endCoords.clientX, endCoords.clientY);
+    };
+
+    window.addEventListener('pointermove', onDragMove, { passive: false });
+    window.addEventListener('pointerup', onDragEnd);
+    window.addEventListener('touchmove', onDragMove, { passive: false });
+    window.addEventListener('touchend', onDragEnd);
+    window.addEventListener('touchcancel', onDragEnd);
+  };
+
+  itemEl.addEventListener('pointerdown', onDragStart);
+  itemEl.addEventListener('touchstart', onDragStart, { passive: false });
+
+  // Fallback click/tap on active header item
+  itemEl.onclick = (e) => {
+    e.stopPropagation();
+    itemEl.onclick = null;
+    const rect = theater.getBoundingClientRect();
+    triggerEmojiBlendDrop(rect.left + rect.width / 2, rect.top + rect.height / 2);
+  };
 }
 
 function finishAllSteps() {
@@ -1659,8 +1790,11 @@ function doCollisionFlash() {
   canvas.classList.add('visible');
   startSwirlLoop(); // ← blend starts right away
 
-  // Dynamic fusion absorb keyframe: Spin in place (720deg rotation) matching the fly direction base transform
-  const baseTr = (currentDir === 'left' || currentDir === 'right') ? 'translateY(-50%)' : 'translateX(-50%)';
+  // Dynamic fusion absorb keyframe: Spin in place (720deg rotation) matching rotation angle and scale
+  const isRecording = document.body.classList.contains('recording-mode');
+  const rotDeg = isRecording ? -90 : 0;
+  const baseTr = `translate(-50%, -50%) rotate(${rotDeg}deg)`;
+
   let st = document.getElementById('fusion-absorb-kf');
   if (!st) {
     st = document.createElement('style');
@@ -1669,9 +1803,8 @@ function doCollisionFlash() {
   }
   st.textContent = `
     @keyframes fusionAbsorb {
-      0%   { opacity: 1;   transform: ${baseTr} scale(1)    rotate(0deg);   filter: blur(0px); }
-      30%  { opacity: 0.95; transform: ${baseTr} scale(1.1)  rotate(240deg); filter: blur(0px); }
-      100% { opacity: 0;   transform: ${baseTr} scale(0.05) rotate(720deg); filter: blur(8px); }
+      0%   { opacity: 1;   transform: ${baseTr} scale(1.35) rotate(${rotDeg}deg); filter: blur(0px); }
+      100% { opacity: 0;   transform: ${baseTr} scale(0.05) rotate(${rotDeg + 720}deg); filter: blur(8px); }
     }
   `;
 
