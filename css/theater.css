@@ -1,10 +1,10 @@
-﻿/* ============================================================
-   theater.css – Theater (9:16 box), Recording Mode, 
+/* ============================================================
+   theater.css � Theater (9:16 box), Recording Mode, 
    Emoji Header Bar, Fly Boxes, Canvas, Result Reveal, Final Grid
    ============================================================ */
 
 /* ============================
-   RECORDING MODE â€“ Desktop landscape
+   RECORDING MODE – Desktop landscape
    (activated on blend start)
    ============================ */
 body.recording-mode .left-panel,
@@ -44,7 +44,7 @@ body.recording-mode .theater {
 }
 
 /* ============================
-   RIGHT PANEL â€“ Theater
+   RIGHT PANEL – Theater
    ============================ */
 .right-panel {
   flex: 1;
@@ -67,7 +67,7 @@ body.recording-mode .theater {
   width: 100%;
 }
 
-/* â”€â”€ Emoji Header Bar (absolute inside theater) â”€â”€ */
+/* ── Emoji Header Bar (absolute inside theater) ── */
 .emoji-header-bar {
   position: absolute;
   top: 70px;
@@ -130,13 +130,13 @@ body.recording-mode .theater {
   transition: transform .3s var(--ease-spring), border-color .3s, box-shadow .3s;
 }
 
-/* Done state â€“ faded green border */
+/* Done state – faded green border */
 .emoji-header-item.done-step {
   border-color: rgba(5, 150, 105, .45);
   opacity: 0.65;
 }
 
-/* Active state â€“ vivid glow + bounce animation */
+/* Active state – vivid glow + bounce animation */
 .emoji-header-item.active-step {
   border-color: var(--p1);
   box-shadow:
@@ -249,7 +249,7 @@ body.recording-mode .theater {
   padding: 0 2px;
 }
 
-/* 9:16 box â€“ height fills panel, width = height * 9/16 */
+/* 9:16 box – height fills panel, width = height * 9/16 */
 .theater {
   position: relative;
   aspect-ratio: 9 / 16;
@@ -292,7 +292,7 @@ body.recording-mode .theater {
   z-index: 1;
 }
 
-/* â”€â”€ Full-frame Character Layer â”€â”€ */
+/* ── Full-frame Character Layer ── */
 .bg-char-wrap {
   position: absolute;
   inset: 0;
@@ -313,7 +313,7 @@ body.recording-mode .theater {
   display: block;
 }
 
-/* â”€â”€ Idle overlay â”€â”€ */
+/* ── Idle overlay ── */
 .idle-over {
   position: absolute;
   inset: 0;
@@ -348,7 +348,7 @@ body.recording-mode .theater {
   color: var(--p1);
 }
 
-/* â”€â”€ Flying images â”€â”€ */
+/* ── Flying images ── */
 .fly-box {
   position: absolute;
   /* centered horizontally */
@@ -406,7 +406,7 @@ body.recording-mode .theater {
   background: rgba(219, 39, 119, .82);
 }
 
-/* â”€â”€ Canvas â”€â”€ */
+/* ── Canvas ── */
 #blend-canvas {
   position: absolute;
   inset: 0;
@@ -432,7 +432,7 @@ body.recording-mode .theater {
   }
 }
 
-/* â”€â”€ Result reveal (Morph Transformation) â”€â”€ */
+/* ── Result reveal (Morph Transformation) ── */
 .result-wrap {
   position: absolute;
   inset: 0;
@@ -519,11 +519,11 @@ body.recording-mode .theater {
 }
 
 .result-wrap.show img {
-  /* No entrance animation â€” eraser reveal shows the image gradually */
+  /* No entrance animation — eraser reveal shows the image gradually */
   animation: none;
 }
 
-/* Result Badge Overlay (á»Ÿ giá»¯a lá»‡ch xuá»‘ng dÆ°á»›i - SiÃªu ná»•i báº­t trÃªn má»i ná»n, ká»ƒ cáº£ ná»n tráº¯ng) */
+/* Result Badge Overlay (ở giữa lệch xuống dưới - Siêu nổi bật trên mọi nền, kể cả nền trắng) */
 .result-badge {
   position: absolute;
   bottom: 25%;
@@ -637,7 +637,7 @@ body.recording-mode .theater {
 
 
 /* ============================
-   RESPONSIVE â€“ Mobile & Tablet (max-width: 1023px)
+   RESPONSIVE – Mobile & Tablet (max-width: 1023px)
    ============================ */
 @media (max-width: 1023px) {
 
@@ -678,7 +678,7 @@ body.recording-mode .theater {
     padding: 12px 10px 24px !important;
   }
 
-  /* â”€â”€ Mobile Theater Overlay â”€â”€ */
+  /* ── Mobile Theater Overlay ── */
   .mobile-theater-overlay {
     position: fixed;
     inset: 0;
@@ -696,6 +696,37 @@ body.recording-mode .theater {
     pointer-events: auto;
   }
 
+
+  /* -- Mobile Exit Button (X) -- */
+  .mobile-exit-btn {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    z-index: 10001;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: transparent;
+    border: none;
+    color: transparent;
+    font-size: 0.75rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    padding: 0;
+    line-height: 1;
+    backdrop-filter: blur(4px);
+  }
+
+  .mobile-exit-btn:hover,
+  .mobile-exit-btn:active {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: #f87171;
+    transform: scale(1.1);
+  }
   .mobile-theater-bar {
     height: 52px;
     padding: 0 14px;
@@ -809,14 +840,14 @@ body.recording-mode .theater {
   }
 }
 
-/* â”€â”€ Step card drag-over â”€â”€ */
+/* ── Step card drag-over ── */
 .step-card.drag-over {
   border-color: var(--p1) !important;
   background: rgba(124, 58, 237, .07) !important;
   box-shadow: 0 0 0 2px rgba(124, 58, 237, .25);
 }
 
-/* â”€â”€ Question input wrapper â”€â”€ */
+/* ── Question input wrapper ── */
 .question-input-wrap {
   display: flex;
   gap: 6px;
@@ -850,7 +881,7 @@ body.recording-mode .theater {
   transform: scale(1.08);
 }
 
-/* â”€â”€ Question chips â”€â”€ */
+/* ── Question chips ── */
 .question-chips {
   display: flex;
   flex-wrap: wrap;
