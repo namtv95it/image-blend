@@ -1401,9 +1401,6 @@ function setupHeaderEmojiDrag(headerStepIdx) {
       window.removeEventListener('touchcancel', onDragEnd);
       ghost.remove();
 
-      itemEl.removeEventListener('pointerdown', onDragStart);
-      itemEl.removeEventListener('touchstart', onDragStart);
-
       const endCoords = getEventCoords(endEv);
       const endX = endCoords.clientX;
       const endY = endCoords.clientY;
@@ -1436,6 +1433,9 @@ function setupHeaderEmojiDrag(headerStepIdx) {
         return;
       }
 
+      // Remove drag listeners only on successful drop
+      itemEl.removeEventListener('pointerdown', onDragStart);
+      itemEl.removeEventListener('touchstart', onDragStart);
       triggerEmojiBlendDrop(endX, endY);
     };
 
