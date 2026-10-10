@@ -1240,6 +1240,10 @@ function showDesktopCharPreview(seconds, onComplete) {
 
 function runChainStep(steps, idx) {
   if (!S.running) return;
+  if (S.animId) {
+    cancelAnimationFrame(S.animId);
+    S.animId = null;
+  }
   if (idx >= steps.length) {
     // All done!
     finishAllSteps();
@@ -1568,24 +1572,20 @@ function showFinalGridScreen() {
   // Display final grid overlay
   finalGridWrap.classList.add('show');
 
-  // Trigger sequential badge pop attention animation + sound effect
+  // Trigger sequential badge pop attention animation + sound effect (GPU-composited)
   const gridItems = finalGridWrap.querySelectorAll('.final-grid-item');
   gridItems.forEach((gridItem, idx) => {
     setTimeout(() => {
       const emojiBadge = gridItem.querySelector('.final-item-emoji');
       const textBadge  = gridItem.querySelector('.final-item-badge');
       if (emojiBadge) {
-        emojiBadge.classList.remove('badge-pop-active');
-        void emojiBadge.offsetWidth;
         emojiBadge.classList.add('badge-pop-active');
       }
       if (textBadge) {
-        textBadge.classList.remove('badge-pop-active');
-        void textBadge.offsetWidth;
         textBadge.classList.add('badge-pop-active');
       }
       playSfxBadgePop(idx);
-    }, 400 + idx * 350);
+    }, 450 + idx * 300);
   });
 
   // Mobile: 10s after displaying the 4-result grid, reveal the top header bar again
@@ -1819,7 +1819,7 @@ function doCollisionFlash() {
   // Dynamic fusion absorb keyframe: Spin in place (720deg rotation) matching rotation angle and scale
   const isRecording = document.body.classList.contains('recording-mode');
   const rotDeg = isRecording ? -90 : 0;
-  const baseTr = `translate(-50%, -50%) rotate(${rotDeg}deg)`;
+  const baseTr = `translate3d(-50%, -50%, 0) rotate(${rotDeg}deg)`;
 
   let st = document.getElementById('fusion-absorb-kf');
   if (!st) {
@@ -1829,13 +1829,14 @@ function doCollisionFlash() {
   }
   st.textContent = `
     @keyframes fusionAbsorb {
-      0%   { opacity: 1;   transform: ${baseTr} scale(1.35) rotate(${rotDeg}deg); filter: blur(0px); }
-      100% { opacity: 0;   transform: ${baseTr} scale(0.05) rotate(${rotDeg + 720}deg); filter: blur(8px); }
+      0%   { opacity: 1; transform: ${baseTr} scale(1.35); }
+      100% { opacity: 0; transform: ${baseTr} scale(0.05) rotate(720deg); }
     }
   `;
 
-  // Emoji "merges into" the character — spins in place, shrinks, blurs out
-  // Temporarily lift above canvas (z-index:6) so animation is visible
+  // Emoji "merges into" the character — spins in place, shrinks, smoothly fades out
+  // Temporarily lift above canvas (z-index:15) so animation is visible
+  fly2.style.willChange = 'transform, opacity';
   fly2.style.zIndex = '15';
   fly2.style.transition = 'none';
   fly2.style.animation = 'fusionAbsorb 0.7s cubic-bezier(.4,0,.2,1) forwards';
@@ -1846,6 +1847,7 @@ function doCollisionFlash() {
     fly2.style.opacity = '0';
     fly2.style.zIndex = '';
     fly2.style.transition = '';
+    fly2.style.willChange = '';
   }, 710);
 
   // Remove flash overlay after it fades
@@ -1853,19 +1855,30 @@ function doCollisionFlash() {
 }
 
 function startSwirlLoop() {
+  if (S.animId) {
+    cancelAnimationFrame(S.animId);
+    S.animId = null;
+  }
   S.time = 0;
   let elapsed = 0;
   const totalMs = 1800;
   const speed = parseFloat(document.getElementById('sl-speed').value);
 
   function loop() {
-    if (!S.running) return;
+    if (!S.running) {
+      S.animId = null;
+      return;
+    }
     const progress = Math.min(1, elapsed / totalMs);
     renderFrame(progress);
     S.time += speed * 0.14;
     elapsed += 16 * (speed / 3.5);
-    if (elapsed < totalMs) S.animId = requestAnimationFrame(loop);
-    else phase4();
+    if (elapsed < totalMs) {
+      S.animId = requestAnimationFrame(loop);
+    } else {
+      S.animId = null;
+      phase4();
+    }
   }
   S.animId = requestAnimationFrame(loop);
 }
@@ -1879,6 +1892,17 @@ function phase4() {
   if (resultBadge) {
     resultBadge.innerHTML = '';
     resultBadge.classList.remove('show');
+  }
+
+  // Pre-draw full-resolution result image cleanly onto canvas before eraser starts
+  const W = canvas.width, H = canvas.height;
+  if (S._currentResultImg && W > 0 && H > 0) {
+    ctx.clearRect(0, 0, W, H);
+    const ar = S._currentResultImg.width / S._currentResultImg.height;
+    let sw, sh, sx, sy;
+    if (ar > W / H) { sw = W; sh = W / ar; sx = 0; sy = (H - sh) / 2; }
+    else { sh = H; sw = H * ar; sx = (W - sw) / 2; sy = 0; }
+    ctx.drawImage(S._currentResultImg, sx, sy, sw, sh);
   }
 
   // Read revealStyle from current step object
@@ -2493,34 +2517,120 @@ function startEraserSplitCurtain(onDone) {
   requestAnimationFrame(erase);
 }
 
+/* ─────────────────────── CACHED BLEND BUFFERS (High-performance 60fps on iPad/Mobile) ─────────────────────── */
+let _blendBuf = {
+  w: 0,
+  h: 0,
+  bw: 0,
+  bh: 0,
+  charImg: null,
+  resultImg: null,
+  offA: null,
+  offB: null,
+  offOut: null,
+  ctxOut: null,
+  pxA: null,
+  pxB: null,
+  outData: null,
+};
+
+function prepareBlendBuffers(charImg, resultImg, W, H) {
+  // Cap internal morph resolution for iPad/mobile 60fps performance
+  // 360px provides crisp detail with hardware bilinear upscale while cutting CPU pixel iterations by ~75%
+  const maxDim = 360;
+  let bw = W, bh = H;
+  if (bw > maxDim || bh > maxDim) {
+    if (bw >= bh) {
+      bh = Math.round((bh * maxDim) / bw);
+      bw = maxDim;
+    } else {
+      bw = Math.round((bw * maxDim) / bh);
+      bh = maxDim;
+    }
+  }
+  bw = Math.max(120, bw & ~1);
+  bh = Math.max(120, bh & ~1);
+
+  if (!_blendBuf.offA) {
+    _blendBuf.offA = document.createElement('canvas');
+    _blendBuf.offB = document.createElement('canvas');
+    _blendBuf.offOut = document.createElement('canvas');
+    _blendBuf.ctxOut = _blendBuf.offOut.getContext('2d');
+  }
+
+  if (_blendBuf.bw !== bw || _blendBuf.bh !== bh) {
+    _blendBuf.bw = bw;
+    _blendBuf.bh = bh;
+    _blendBuf.offA.width = bw;
+    _blendBuf.offA.height = bh;
+    _blendBuf.offB.width = bw;
+    _blendBuf.offB.height = bh;
+    _blendBuf.offOut.width = bw;
+    _blendBuf.offOut.height = bh;
+    _blendBuf.outData = _blendBuf.ctxOut.createImageData(bw, bh);
+  }
+
+  _blendBuf.w = W;
+  _blendBuf.h = H;
+  _blendBuf.charImg = charImg;
+  _blendBuf.resultImg = resultImg;
+
+  const drawContain = (c, img, targetW, targetH) => {
+    c.clearRect(0, 0, targetW, targetH);
+    const ar = img.width / img.height;
+    let sw, sh, sx, sy;
+    if (ar > targetW / targetH) {
+      sw = targetW; sh = targetW / ar; sx = 0; sy = (targetH - sh) / 2;
+    } else {
+      sh = targetH; sw = targetH * ar; sx = (targetW - sw) / 2; sy = 0;
+    }
+    c.drawImage(img, sx, sy, sw, sh);
+  };
+
+  const ctxA = _blendBuf.offA.getContext('2d');
+  const ctxB = _blendBuf.offB.getContext('2d');
+  drawContain(ctxA, charImg, bw, bh);
+  drawContain(ctxB, resultImg, bw, bh);
+
+  _blendBuf.pxA = ctxA.getImageData(0, 0, bw, bh).data;
+  _blendBuf.pxB = ctxB.getImageData(0, 0, bw, bh).data;
+}
+
 /* ─────────────────────── RENDER ─────────────────────── */
 function renderFrame(progress) {
   const W = canvas.width, H = canvas.height;
+  if (!S._currentCharImg || !S._currentResultImg || W <= 0 || H <= 0) return;
 
-  const offA = drawToOff(S._currentCharImg, W, H);
-  const offB = drawToOff(S._currentResultImg, W, H); // Blend char → result (new character)
-  const pxA = offA.getImageData(0, 0, W, H).data;
-  const pxB = offB.getImageData(0, 0, W, H).data;
-  const out = ctx.createImageData(W, H);
+  if (_blendBuf.charImg !== S._currentCharImg ||
+      _blendBuf.resultImg !== S._currentResultImg ||
+      _blendBuf.w !== W ||
+      _blendBuf.h !== H) {
+    prepareBlendBuffers(S._currentCharImg, S._currentResultImg, W, H);
+  }
+
+  const bw = _blendBuf.bw, bh = _blendBuf.bh;
+  const pxA = _blendBuf.pxA;
+  const pxB = _blendBuf.pxB;
+  const out = _blendBuf.outData;
 
   const swirl = parseFloat(document.getElementById('sl-swirl').value) / 100;
   const t = S.time;
 
   const currentStyle = S._currentStepStyle || 'fusion';
   switch (currentStyle) {
-    case 'ripple': fxRippleMorph(pxA, pxB, out.data, W, H, t, progress, swirl); break;
+    case 'ripple': fxRippleMorph(pxA, pxB, out.data, bw, bh, t, progress, swirl); break;
     case 'fusion':
-    default: fxFusion(pxA, pxB, out.data, W, H, t, progress, swirl); break;
+    default: fxFusion(pxA, pxB, out.data, bw, bh, t, progress, swirl); break;
   }
 
-  ctx.putImageData(out, 0, 0);
+  _blendBuf.ctxOut.putImageData(out, 0, 0);
+  ctx.drawImage(_blendBuf.offOut, 0, 0, W, H);
 }
 
 function drawToOff(img, W, H) {
   const off = document.createElement('canvas');
   off.width = W; off.height = H;
   const c = off.getContext('2d');
-  // object-fit: contain — keep full image visible, letterbox/pillarbox with transparency
   const ar = img.width / img.height;
   let sw, sh, sx, sy;
   if (ar > W / H) { sw = W; sh = W / ar; sx = 0; sy = (H - sh) / 2; }
@@ -5102,6 +5212,8 @@ function makeHandleResizable(handle, cardEl, cardIdx, stageEl, corner) {
 }
 
 function makeCardDraggable(cardEl, cardIdx, stageEl, targetCssW, targetCssH, origLeft, origTop) {
+  const isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+
   const getStageCssPos = (e) => {
     const rect = stageEl.getBoundingClientRect();
     const isRotated = document.body.classList.contains('recording-mode');
@@ -5122,24 +5234,23 @@ function makeCardDraggable(cardEl, cardIdx, stageEl, targetCssW, targetCssH, ori
     }
   };
 
-  const onPointerMove = (e) => {
-    if (!SHADOWMATCH.activeCardEl || SHADOWMATCH.activeCardEl !== cardEl) return;
-    const { stageCssX, stageCssY } = getStageCssPos(e);
-    cardEl.style.left = (stageCssX - targetCssW / 2) + 'px';
-    cardEl.style.top = (stageCssY - targetCssH / 2) + 'px';
-  };
+  if (isTouchDevice) {
+    // ── TOUCH MODE: true drag (finger follows card) ──
+    const onTouchMove = (e) => {
+      if (e.cancelable) e.preventDefault();
+      const { stageCssX, stageCssY } = getStageCssPos(e);
+      cardEl.style.left = (stageCssX - targetCssW / 2) + 'px';
+      cardEl.style.top  = (stageCssY - targetCssH / 2) + 'px';
+    };
 
-  const onPointerDown = (e) => {
-    e.stopPropagation();
-
-    // If this card is ALREADY active (being moved), click again to DROP it at current location
-    if (SHADOWMATCH.activeCardEl === cardEl) {
-      SHADOWMATCH.activeCardEl = null;
+    const onTouchEnd = (e) => {
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('touchcancel', onTouchEnd);
       cardEl.style.zIndex = '5';
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('touchmove', onPointerMove);
+      SHADOWMATCH.activeCardEl = null;
 
-      const currentTop = parseFloat(cardEl.style.top) || 0;
+      const currentTop  = parseFloat(cardEl.style.top)  || 0;
       const currentLeft = parseFloat(cardEl.style.left) || 0;
 
       if (currentTop > 30) {
@@ -5152,44 +5263,111 @@ function makeCardDraggable(cardEl, cardIdx, stageEl, targetCssW, targetCssH, ori
         SHADOWMATCH.cardState[cardIdx] = { isDropped: false };
         renderShadowMatchTab();
       }
-      return;
-    }
+    };
 
-    // Release any previous active card if another one was selected
-    if (SHADOWMATCH.activeCardEl && SHADOWMATCH.activeCardEl !== cardEl) {
-      SHADOWMATCH.activeCardEl.style.zIndex = '5';
-      SHADOWMATCH.activeCardEl = null;
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('touchmove', onPointerMove);
-    }
+    const onTouchStart = (e) => {
+      if (e.cancelable) e.preventDefault();
+      e.stopPropagation();
 
-    // ACTIVATE THIS CARD: Pick up and follow cursor immediately
-    SHADOWMATCH.activeCardEl = cardEl;
-    cardEl.style.zIndex = '100';
+      // Release any previous active card
+      if (SHADOWMATCH.activeCardEl && SHADOWMATCH.activeCardEl !== cardEl) {
+        SHADOWMATCH.activeCardEl.style.zIndex = '5';
+        SHADOWMATCH.activeCardEl = null;
+      }
 
-    const state = SHADOWMATCH.cardState[cardIdx];
-    state.isDropped = true;
-    cardEl.style.width = targetCssW + 'px';
-    cardEl.style.height = targetCssH + 'px';
+      SHADOWMATCH.activeCardEl = cardEl;
+      cardEl.style.zIndex = '100';
 
-    const { stageCssX, stageCssY } = getStageCssPos(e);
-    cardEl.style.left = (stageCssX - targetCssW / 2) + 'px';
-    cardEl.style.top = (stageCssY - targetCssH / 2) + 'px';
+      const state = SHADOWMATCH.cardState[cardIdx];
+      state.isDropped = true;
+      cardEl.style.width  = targetCssW + 'px';
+      cardEl.style.height = targetCssH + 'px';
 
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('touchmove', onPointerMove, { passive: false });
-  };
+      const { stageCssX, stageCssY } = getStageCssPos(e);
+      cardEl.style.left = (stageCssX - targetCssW / 2) + 'px';
+      cardEl.style.top  = (stageCssY - targetCssH / 2) + 'px';
 
-  cardEl.addEventListener('pointerdown', onPointerDown);
-  cardEl.addEventListener('touchstart', onPointerDown, { passive: false });
+      window.addEventListener('touchmove', onTouchMove, { passive: false });
+      window.addEventListener('touchend', onTouchEnd);
+      window.addEventListener('touchcancel', onTouchEnd);
+    };
+
+    cardEl.addEventListener('touchstart', onTouchStart, { passive: false });
+
+  } else {
+    // ── DESKTOP MODE: click to pick up, move cursor, click to drop ──
+    const onPointerMove = (e) => {
+      if (!SHADOWMATCH.activeCardEl || SHADOWMATCH.activeCardEl !== cardEl) return;
+      const { stageCssX, stageCssY } = getStageCssPos(e);
+      cardEl.style.left = (stageCssX - targetCssW / 2) + 'px';
+      cardEl.style.top  = (stageCssY - targetCssH / 2) + 'px';
+    };
+
+    const onPointerDown = (e) => {
+      e.stopPropagation();
+
+      // Click again on active card → drop at current position
+      if (SHADOWMATCH.activeCardEl === cardEl) {
+        SHADOWMATCH.activeCardEl = null;
+        cardEl.style.zIndex = '5';
+        window.removeEventListener('pointermove', onPointerMove);
+
+        const currentTop  = parseFloat(cardEl.style.top)  || 0;
+        const currentLeft = parseFloat(cardEl.style.left) || 0;
+
+        if (currentTop > 30) {
+          SHADOWMATCH.cardState[cardIdx] = {
+            isDropped: true,
+            dropLeft: currentLeft,
+            dropTop: currentTop
+          };
+        } else {
+          SHADOWMATCH.cardState[cardIdx] = { isDropped: false };
+          renderShadowMatchTab();
+        }
+        return;
+      }
+
+      // Release previous active card
+      if (SHADOWMATCH.activeCardEl && SHADOWMATCH.activeCardEl !== cardEl) {
+        SHADOWMATCH.activeCardEl.style.zIndex = '5';
+        SHADOWMATCH.activeCardEl = null;
+        window.removeEventListener('pointermove', onPointerMove);
+      }
+
+      // Pick up this card
+      SHADOWMATCH.activeCardEl = cardEl;
+      cardEl.style.zIndex = '100';
+
+      const state = SHADOWMATCH.cardState[cardIdx];
+      state.isDropped = true;
+      cardEl.style.width  = targetCssW + 'px';
+      cardEl.style.height = targetCssH + 'px';
+
+      const { stageCssX, stageCssY } = getStageCssPos(e);
+      cardEl.style.left = (stageCssX - targetCssW / 2) + 'px';
+      cardEl.style.top  = (stageCssY - targetCssH / 2) + 'px';
+
+      window.addEventListener('pointermove', onPointerMove);
+    };
+
+    cardEl.addEventListener('pointerdown', onPointerDown);
+  }
 }
 
 function setupShadowMatchCursor(stageEl) {
+  // On touch devices: no custom cursor, use native touch
+  const isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+  if (isTouchDevice) {
+    stageEl.style.cursor = '';
+    return;
+  }
+
   let cursorEl = stageEl.querySelector('#sm-custom-cursor');
   if (!cursorEl) {
     cursorEl = document.createElement('div');
     cursorEl.id = 'sm-custom-cursor';
-    cursorEl.textContent = '👆';
+    cursorEl.textContent = '\uD83D\uDC46';
     cursorEl.style.cssText = 'position:absolute;left:0;top:0;line-height:1;pointer-events:none;z-index:200;display:none;transform:translate(-50%,-8%);filter:drop-shadow(0 2px 4px rgba(0,0,0,.5));';
     stageEl.appendChild(cursorEl);
   }
@@ -6606,15 +6784,24 @@ function startBpSwirlLoop(onDone) {
 
 function renderBpFrame(progress, swirl) {
   const W = canvas.width, H = canvas.height;
-  const offA = drawToOff(S._currentCharImg, W, H);
-  const offB = drawToOff(S._currentResultImg, W, H);
-  const pxA = offA.getImageData(0, 0, W, H).data;
-  const pxB = offB.getImageData(0, 0, W, H).data;
-  const out = ctx.createImageData(W, H);
+  if (!S._currentCharImg || !S._currentResultImg || W <= 0 || H <= 0) return;
+
+  if (_blendBuf.charImg !== S._currentCharImg ||
+      _blendBuf.resultImg !== S._currentResultImg ||
+      _blendBuf.w !== W ||
+      _blendBuf.h !== H) {
+    prepareBlendBuffers(S._currentCharImg, S._currentResultImg, W, H);
+  }
+
+  const bw = _blendBuf.bw, bh = _blendBuf.bh;
+  const pxA = _blendBuf.pxA;
+  const pxB = _blendBuf.pxB;
+  const out = _blendBuf.outData;
 
   // Blend char -> result with Fusion effect
-  fxFusion(pxA, pxB, out.data, W, H, S.time, progress, swirl);
-  ctx.putImageData(out, 0, 0);
+  fxFusion(pxA, pxB, out.data, bw, bh, S.time, progress, swirl);
+  _blendBuf.ctxOut.putImageData(out, 0, 0);
+  ctx.drawImage(_blendBuf.offOut, 0, 0, W, H);
 }
 
 function phaseBpShowResult(validStreams, sIdx) {

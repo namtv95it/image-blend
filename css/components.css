@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    components.css – Shared UI Components:
    Upload Cards, Control Cards, Buttons, Tabs, Phase Bar,
    Blend Table, Question Chips, Toast
@@ -959,11 +959,13 @@
 .final-item-emoji {
   position: absolute;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate3d(-50%, 0, 0);
+  -webkit-transform: translate3d(-50%, 0, 0);
+  will-change: transform;
   width: 60px;
   height: 60px;
   background: #ffffff;
-  border: 2px solid rgba(124, 58, 237, 0.35);
+  border: 2px solid rgba(124, 58, 237, 0.45);
   border-radius: 10px;
   box-shadow:
     0 6px 16px rgba(0, 0, 0, 0.2),
@@ -973,9 +975,9 @@
   justify-content: center;
   z-index: 10;
   padding: 3px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  animation: emojiBadgePop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  animation: emojiBadgePop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 .final-item-emoji img {
@@ -997,47 +999,50 @@
 
 @keyframes emojiBadgePop {
   0% {
-    transform: translateX(-50%) scale(0.3);
+    transform: translate3d(-50%, 0, 0) scale(0.3);
+    -webkit-transform: translate3d(-50%, 0, 0) scale(0.3);
     opacity: 0;
   }
 
   100% {
-    transform: translateX(-50%) scale(1);
+    transform: translate3d(-50%, 0, 0) scale(1);
+    -webkit-transform: translate3d(-50%, 0, 0) scale(1);
     opacity: 1;
   }
 }
 
-/* Sequential Pop Attention Animation for Badges */
+/* Sequential Pop Attention Animation for Badges - GPU accelerated */
 .final-item-emoji.badge-pop-active,
 .final-item-badge.badge-pop-active {
-  animation: badgeAttentionPop 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+  animation: badgeAttentionPop 0.48s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
 }
 
 @keyframes badgeAttentionPop {
   0% {
-    transform: translateX(-50%) scale(1);
+    transform: translate3d(-50%, 0, 0) scale(1);
+    -webkit-transform: translate3d(-50%, 0, 0) scale(1);
   }
 
-  45% {
-    transform: translateX(-50%) scale(1.42);
-    box-shadow: 0 8px 28px rgba(219, 39, 119, 0.85), 0 0 24px rgba(124, 58, 237, 0.85);
-    filter: brightness(1.25);
-    z-index: 30;
+  40% {
+    transform: translate3d(-50%, 0, 0) scale(1.36);
+    -webkit-transform: translate3d(-50%, 0, 0) scale(1.36);
   }
 
   100% {
-    transform: translateX(-50%) scale(1);
-    filter: brightness(1);
+    transform: translate3d(-50%, 0, 0) scale(1);
+    -webkit-transform: translate3d(-50%, 0, 0) scale(1);
   }
 }
 
 .final-item-badge {
   position: absolute;
   left: 50%;
-  transform: translateX(-50%);
-  background: linear-gradient(135deg, rgba(18, 12, 40, 0.94), rgba(38, 18, 70, 0.96));
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  transform: translate3d(-50%, 0, 0);
+  -webkit-transform: translate3d(-50%, 0, 0);
+  will-change: transform;
+  background: linear-gradient(135deg, rgba(18, 12, 40, 0.96), rgba(38, 18, 70, 0.98));
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
   color: #ffffff;
   padding: 5px 12px;
   border-radius: 20px;

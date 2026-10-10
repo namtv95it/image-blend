@@ -1684,26 +1684,85 @@ function startEraserSplitCurtain(onDone) {
 
 // ─── RENDER ──────────────────────────────────────────────────────────────────
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ RENDER â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+let _blendBuf = {
+  w: 0, h: 0, bw: 0, bh: 0,
+  charImg: null, resultImg: null,
+  offA: null, offB: null, offOut: null, ctxOut: null,
+  pxA: null, pxB: null, outData: null,
+};
+
+function prepareBlendBuffers(charImg, resultImg, W, H) {
+  const maxDim = 360;
+  let bw = W, bh = H;
+  if (bw > maxDim || bh > maxDim) {
+    if (bw >= bh) { bh = Math.round((bh * maxDim) / bw); bw = maxDim; }
+    else { bw = Math.round((bw * maxDim) / bh); bh = maxDim; }
+  }
+  bw = Math.max(120, bw & ~1);
+  bh = Math.max(120, bh & ~1);
+
+  if (!_blendBuf.offA) {
+    _blendBuf.offA = document.createElement('canvas');
+    _blendBuf.offB = document.createElement('canvas');
+    _blendBuf.offOut = document.createElement('canvas');
+    _blendBuf.ctxOut = _blendBuf.offOut.getContext('2d');
+  }
+
+  if (_blendBuf.bw !== bw || _blendBuf.bh !== bh) {
+    _blendBuf.bw = bw; _blendBuf.bh = bh;
+    _blendBuf.offA.width = bw; _blendBuf.offA.height = bh;
+    _blendBuf.offB.width = bw; _blendBuf.offB.height = bh;
+    _blendBuf.offOut.width = bw; _blendBuf.offOut.height = bh;
+    _blendBuf.outData = _blendBuf.ctxOut.createImageData(bw, bh);
+  }
+
+  _blendBuf.w = W; _blendBuf.h = H;
+  _blendBuf.charImg = charImg; _blendBuf.resultImg = resultImg;
+
+  const drawContain = (c, img, targetW, targetH) => {
+    c.clearRect(0, 0, targetW, targetH);
+    const ar = img.width / img.height;
+    let sw, sh, sx, sy;
+    if (ar > targetW / targetH) { sw = targetW; sh = targetW / ar; sx = 0; sy = (targetH - sh) / 2; }
+    else { sh = targetH; sw = targetH * ar; sx = (targetW - sw) / 2; sy = 0; }
+    c.drawImage(img, sx, sy, sw, sh);
+  };
+
+  const ctxA = _blendBuf.offA.getContext('2d');
+  const ctxB = _blendBuf.offB.getContext('2d');
+  drawContain(ctxA, charImg, bw, bh);
+  drawContain(ctxB, resultImg, bw, bh);
+
+  _blendBuf.pxA = ctxA.getImageData(0, 0, bw, bh).data;
+  _blendBuf.pxB = ctxB.getImageData(0, 0, bw, bh).data;
+}
+
 function renderFrame(progress) {
   const W = canvas.width, H = canvas.height;
+  if (!S._currentCharImg || !S._currentResultImg || W <= 0 || H <= 0) return;
 
-  const offA = drawToOff(S._currentCharImg, W, H);
-  const offB = drawToOff(S._currentResultImg, W, H); // Blend char â†’ result (new character)
-  const pxA = offA.getImageData(0, 0, W, H).data;
-  const pxB = offB.getImageData(0, 0, W, H).data;
-  const out = ctx.createImageData(W, H);
+  if (_blendBuf.charImg !== S._currentCharImg ||
+      _blendBuf.resultImg !== S._currentResultImg ||
+      _blendBuf.w !== W || _blendBuf.h !== H) {
+    prepareBlendBuffers(S._currentCharImg, S._currentResultImg, W, H);
+  }
+
+  const bw = _blendBuf.bw, bh = _blendBuf.bh;
+  const pxA = _blendBuf.pxA, pxB = _blendBuf.pxB;
+  const out = _blendBuf.outData;
 
   const swirl = parseFloat(document.getElementById('sl-swirl').value) / 100;
   const t = S.time;
 
   const currentStyle = S._currentStepStyle || 'fusion';
   switch (currentStyle) {
-    case 'ripple': fxRippleMorph(pxA, pxB, out.data, W, H, t, progress, swirl); break;
+    case 'ripple': fxRippleMorph(pxA, pxB, out.data, bw, bh, t, progress, swirl); break;
     case 'fusion':
-    default: fxFusion(pxA, pxB, out.data, W, H, t, progress, swirl); break;
+    default: fxFusion(pxA, pxB, out.data, bw, bh, t, progress, swirl); break;
   }
 
-  ctx.putImageData(out, 0, 0);
+  _blendBuf.ctxOut.putImageData(out, 0, 0);
+  ctx.drawImage(_blendBuf.offOut, 0, 0, W, H);
 }
 
 function drawToOff(img, W, H) {

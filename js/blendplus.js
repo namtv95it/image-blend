@@ -210,15 +210,21 @@ function startBpSwirlLoop(onDone) {
 
 function renderBpFrame(progress, swirl) {
   const W = canvas.width, H = canvas.height;
-  const offA = drawToOff(S._currentCharImg, W, H);
-  const offB = drawToOff(S._currentResultImg, W, H);
-  const pxA = offA.getImageData(0, 0, W, H).data;
-  const pxB = offB.getImageData(0, 0, W, H).data;
-  const out = ctx.createImageData(W, H);
+  if (!S._currentCharImg || !S._currentResultImg || W <= 0 || H <= 0) return;
 
-  // Blend char -> result with Fusion effect
-  fxFusion(pxA, pxB, out.data, W, H, S.time, progress, swirl);
-  ctx.putImageData(out, 0, 0);
+  if (_blendBuf.charImg !== S._currentCharImg ||
+      _blendBuf.resultImg !== S._currentResultImg ||
+      _blendBuf.w !== W || _blendBuf.h !== H) {
+    prepareBlendBuffers(S._currentCharImg, S._currentResultImg, W, H);
+  }
+
+  const bw = _blendBuf.bw, bh = _blendBuf.bh;
+  const pxA = _blendBuf.pxA, pxB = _blendBuf.pxB;
+  const out = _blendBuf.outData;
+
+  fxFusion(pxA, pxB, out.data, bw, bh, S.time, progress, swirl);
+  _blendBuf.ctxOut.putImageData(out, 0, 0);
+  ctx.drawImage(_blendBuf.offOut, 0, 0, W, H);
 }
 
 function phaseBpShowResult(validStreams, sIdx) {
