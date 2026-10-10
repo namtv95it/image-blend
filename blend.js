@@ -1358,6 +1358,8 @@ function setupHeaderEmojiDrag(headerStepIdx) {
     if (e.cancelable) e.preventDefault();
 
     const coords = getEventCoords(e);
+    const startX = coords.clientX;
+    const startY = coords.clientY;
     const imgSrc = S._currentEmojiImg ? S._currentEmojiImg.src : '';
     if (!imgSrc) return;
 
@@ -1403,7 +1405,38 @@ function setupHeaderEmojiDrag(headerStepIdx) {
       itemEl.removeEventListener('touchstart', onDragStart);
 
       const endCoords = getEventCoords(endEv);
-      triggerEmojiBlendDrop(endCoords.clientX, endCoords.clientY);
+      const endX = endCoords.clientX;
+      const endY = endCoords.clientY;
+
+      // 1) Must drag at least 60px total to count as intentional
+      const dist = Math.sqrt((endX - startX) ** 2 + (endY - startY) ** 2);
+      if (dist < 60) {
+        if (theater) theater.classList.remove('drop-zone-active');
+        return;
+      }
+
+      // 2) Must drag downward at least 40px (from header toward theater)
+      const draggedDown = endY - startY > 40;
+      if (!draggedDown) {
+        if (theater) theater.classList.remove('drop-zone-active');
+        return;
+      }
+
+      // 3) Drop point must land within center 60% width of theater
+      const theaterRect = theater.getBoundingClientRect();
+      const tCenterX = (theaterRect.left + theaterRect.right) / 2;
+      const tHalfW = theaterRect.width * 0.30;
+      const inCenterX = endX >= tCenterX - tHalfW && endX <= tCenterX + tHalfW;
+
+      // 4) Drop point must land within theater height bounds
+      const inTheaterY = endY >= theaterRect.top && endY <= theaterRect.bottom;
+
+      if (!inCenterX || !inTheaterY) {
+        if (theater) theater.classList.remove('drop-zone-active');
+        return;
+      }
+
+      triggerEmojiBlendDrop(endX, endY);
     };
 
     window.addEventListener('pointermove', onDragMove, { passive: false });
