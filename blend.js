@@ -1,4 +1,4 @@
-/**
+﻿/**
  * MarbleBlend v4 – Multi-Step Sequential Blend
  *
  * FLOW:
@@ -1416,13 +1416,6 @@ function setupHeaderEmojiDrag(headerStepIdx) {
   itemEl.addEventListener('pointerdown', onDragStart);
   itemEl.addEventListener('touchstart', onDragStart, { passive: false });
 
-  // Fallback click/tap on active header item
-  itemEl.onclick = (e) => {
-    e.stopPropagation();
-    itemEl.onclick = null;
-    const rect = theater.getBoundingClientRect();
-    triggerEmojiBlendDrop(rect.left + rect.width / 2, rect.top + rect.height / 2);
-  };
 }
 
 function finishAllSteps() {
