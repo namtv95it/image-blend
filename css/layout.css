@@ -1,0 +1,125 @@
+﻿/* ============================================================
+   layout.css – Split Layout, Left Panel, Right Sidebar
+   ============================================================ */
+
+/* ============================
+   SPLIT LAYOUT
+   ============================ */
+.split-layout {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ============================
+   LEFT PANEL â€“ Settings
+   ============================ */
+.left-panel {
+  width: 360px;
+  flex-shrink: 0;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 18px 16px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--bg);
+  border-right: 1px solid var(--border);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 58, 237, .2) transparent;
+}
+
+.left-panel::-webkit-scrollbar {
+  width: 4px;
+}
+
+.left-panel::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, .25);
+  border-radius: 4px;
+}
+
+/* ============================
+   RIGHT SIDEBAR â€“ Controls & Settings
+   ============================ */
+.right-sidebar {
+  width: 360px;
+  flex-shrink: 0;
+  height: 100vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 18px 16px 30px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: var(--bg);
+  border-left: 1px solid var(--border);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 58, 237, .2) transparent;
+}
+
+.right-sidebar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.right-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(124, 58, 237, .25);
+  border-radius: 4px;
+}
+
+
+/* Panel header */
+.panel-header {
+  text-align: center;
+  padding: 4px 0 6px;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo-icon {
+  font-size: 1.6rem;
+  display: inline-block;
+  animation: spin 5s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.logo-text {
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: -0.5px;
+  color: var(--txt);
+}
+
+.logo-accent {
+  background: var(--grad-v);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.header-sub {
+  font-size: .75rem;
+  color: var(--txt3);
+  margin-top: 3px;
+}
+
+/* Section label */
+.section-label {
+  font-size: .72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  color: var(--txt3);
+  padding: 0 2px;
+}
+

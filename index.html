@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Marble Blend – Hòa Trộn Hình ảnh</title>
+  <meta name="description" content="MarbleBlend – Hòa trộn hình ảnh, tạo thẻ Pokemon, Battle solo và nhiều hiệu ứng sáng tạo." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="icon" href="favicon.png" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Modular CSS (replaces monolithic style.css) -->
+  <link rel="stylesheet" href="css/index.css" />
+  <!-- Legacy style.css kept as fallback during transition -->
+  <!-- <link rel="stylesheet" href="style.css" /> -->
+</head>
+
+<body>
+  <div class="split-layout">
+
+    <!-- ════════════════════════════════
+       LEFT PANEL  -  Settings
+    ════════════════════════════════ -->
+    <aside class="left-panel">
+
+      <!-- Header -->
+      <div class="panel-header">
+        <div class="logo">
+          <span class="logo-icon"><i class="fa-solid fa-hurricane"></i></span>
+          <span class="logo-text">Marble<span class="logo-accent">Blend</span></span>
+        </div>
+        <p class="header-sub">Hòa trộn hình ảnh & Tạo thẻ Pokemon ✨</p>
+      </div>
+
+      <!--  Tab Navigation  -->
+      <div class="tab-nav-container mb-2">
+        <button class="tab-btn active" id="tab-btn-blend" onclick="switchTab('blend')">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Blend
+        </button>
+        <button class="tab-btn" id="tab-btn-blendplus" onclick="switchTab('blendplus')">
+          <i class="fa-solid fa-wand-magic-sparkles"></i> Blend +
+        </button>
+        <button class="tab-btn" id="tab-btn-pokemon" onclick="switchTab('pokemon')">
+          <i class="fa-solid fa-bolt"></i> Pokemon
+        </button>
+        <button class="tab-btn" id="tab-btn-battle" onclick="switchTab('battle')">
+          <i class="fa-solid fa-shield-halved"></i> Battle
+        </button>
+        <button class="tab-btn" id="tab-btn-puzzle" onclick="switchTab('puzzle')" style="display:none;">
+          <i class="fa-solid fa-puzzle-piece"></i> Puzzle
+        </button>
+        <button class="tab-btn" id="tab-btn-flashlight" onclick="switchTab('flashlight')">
+          <i class="fa-solid fa-lightbulb"></i> Soi Đèn
+        </button>
+        <button class="tab-btn" id="tab-btn-shadowmatch" onclick="switchTab('shadowmatch')">
+          <i class="fa-solid fa-ghost"></i> Ghép Bóứng
+        </button>
+        <button class="tab-btn" id="tab-btn-climax" onclick="switchTab('climax')">
+          <i class="fa-solid fa-bolt-lightning"></i> Cứu Hero 22s
+        </button>
+      </div>
+
+      <!-- TAB 1: EMOJI BLEND CONTENT -->
+      <div class="tab-content" id="tab-content-blend">
+
+        <!--  Character Upload  -->
+        <div class="section-label"><i class="fa-solid fa-user-astronaut"></i> Ảnh nhân vật gốc</div>
+        <div class="upload-card card-1" id="card-1" onclick="pickFile(1)" style="cursor:pointer">
+          <input type="file" id="file-1" accept="image/*" hidden />
+          <div class="card-tag tag-1"><i class="fa-solid fa-user"></i> Nhân vật</div>
+          <div class="card-empty" id="body-1">
+            <div class="empty-icon"><i class="fa-regular fa-image"></i></div>
+            <div class="empty-hint">Click hoặc kéo thả ảnh vào đây</div>
+            <button class="pick-btn btn-1" onclick="event.stopPropagation();pickFile(1)">Chọn</button>
+          </div>
+          <div class="card-preview" id="prev-1" style="display:none">
+            <img id="pimg-1" alt="img1" />
+            <button class="x-btn" onclick="event.stopPropagation();clearSlot(1)"><i
+                class="fa-solid fa-xmark"></i></button>
+          </div>
+        </div>
+
+        <!--  Blend Table (3 cột: Emoji | Hiệu ứng | Kết quả)  -->
+        <div class="section-label" style="margin-top:6px;">
+          <i class="fa-solid fa-layer-group"></i> Các bước blend
+          <span class="gallery-count" id="steps-count"></span>
+        </div>
+
+        <!-- Hidden file inputs -->
+        <input type="file" id="emoji-multi-input" accept="image/*" multiple hidden />
+        <input type="file" id="result-multi-input" accept="image/*" multiple hidden />
+
+        <div class="bt-wrap">
+          <!-- Column headers -->
+          <div class="bt-header">
+            <div class="bt-hcol bt-hcol-emoji"><i class="fa-solid fa-face-smile"></i> Emoji</div>
+            <div class="bt-hcol bt-hcol-fx"><i class="fa-solid fa-wand-magic-sparkles"></i> Hiệu ứng</div>
+            <div class="bt-hcol bt-hcol-result"><i class="fa-solid fa-gift"></i> Kết quả</div>
+          </div>
+          <!-- Dynamic rows rendered by JS -->
+          <div id="blend-table-body"></div>
+          <!-- Empty state hint -->
+          <div class="bt-empty-hint" id="bt-empty-hint">
+            <i class="fa-solid fa-arrow-up-from-bracket"></i>
+            <span>Nhấn <b>+</b> bên dưới  thêm ảnh</span>
+          </div>
+          <!-- Add row -->
+          <div class="bt-add-row" id="bt-add-row">
+            <button class="bt-add-btn" id="bt-add-emoji" title="Thêm emoji">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+            <div class="bt-add-center"></div>
+            <button class="bt-add-btn" id="bt-add-result" title="Thêm kết quả">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+        </div>
+      </div> <!-- /#tab-content-blend -->
+
+      <!-- TAB 1.5: BLEND + (ĐA LUỒNG: NHÂN VẬT + EMOJI + ẢNH MỚI) -->
+      <div class="tab-content" id="tab-content-blendplus" style="display:none">
+        <div class="section-label">
+          <i class="fa-solid fa-layer-group"></i> DANH SÁCH LUỒNG BLEND +
+          <span class="gallery-count" id="bp-streams-count"></span>
+        </div>
+
+        <!-- Hidden multi-file inputs for Blend + -->
+        <input type="file" id="bp-all-multi-input" accept="image/*" multiple hidden />
+        <input type="file" id="bp-char-multi-input" accept="image/*" multiple hidden />
+        <input type="file" id="bp-emoji-multi-input" accept="image/*" multiple hidden />
+        <input type="file" id="bp-result-multi-input" accept="image/*" multiple hidden />
+
+        <div class="bt-wrap">
+          <div class="bt-header" style="grid-template-columns: 1fr 1fr 1fr 34px;">
+            <div class="bt-hcol" style="justify-content:center;"><i class="fa-solid fa-user"></i> NHÂN VẬT</div>
+            <div class="bt-hcol"
+              style="justify-content:center; border-left:1px solid var(--border); border-right:1px solid var(--border);">
+              <i class="fa-solid fa-face-smile"></i> EMOJI
+            </div>
+            <div class="bt-hcol" style="justify-content:center;">ẢNH MỚI</div>
+            <div class="bt-hcol" style="justify-content:center; border-left:1px solid var(--border); padding:0;"><i
+                class="fa-solid fa-gear"></i></div>
+          </div>
+          <div id="bp-table-body"></div>
+          <div class="bt-empty-hint" id="bp-empty-hint">
+            <i class="fa-solid fa-arrow-up-from-bracket"></i>
+            <span>Nhấn <b>Tải tất cả</b> hoặc <b>+</b> để chọn nhiều ảnh đổ vào các ô</span>
+          </div>
+
+          <!-- Bottom upload action bar -->
+          <div class="bp-action-top-bar"
+            style="padding: 6px 8px; background: rgba(124, 58, 237, 0.05); border-top: 1.5px solid var(--border); display: flex; gap: 6px;">
+            <button type="button" class="act-btn" id="bp-btn-upload-all"
+              title="Tải nhiều ảnh lần lượt vào tất cả các ô (Nhân vật -> Emoji -> Ảnh mới)"
+              style="flex: 1; padding: 7px 10px; font-size: 0.78rem; gap: 6px; background: var(--grad-v); color: #ffffff; font-weight: 700; border-radius: 8px; border: none; justify-content: center; box-shadow: 0 2px 8px rgba(124, 58, 237, 0.25);">
+              <i class="fa-solid fa-images"></i> Tải nhiều ảnh (Đổ vào tất cả ô)
+            </button>
+            <button type="button" class="bp-del-btn" id="bp-btn-add-stream" title="Thêm 1 luồng trống"
+              onclick="addBpStream()"
+              style="width: 32px; height: 32px; background: #ffffff; border: 1.5px solid var(--border); color: var(--p1); border-radius: 8px; flex-shrink: 0;">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+
+          <!-- Column-specific upload bar -->
+          <div class="bp-add-row"
+            style="display: grid; grid-template-columns: 1fr 1fr 1fr; padding: 4px 6px 6px; gap: 4px; background: rgba(124, 58, 237, 0.02); border-top: 1px dashed var(--border); align-items: center;">
+            <button type="button" class="act-btn" id="bp-btn-upload-chars" title="Tải lên nhiều ảnh cho cột Nhân vật"
+              style="padding: 5px 2px; font-size: 0.68rem; gap: 3px; background: #ffffff; border: 1px solid var(--border); color: var(--txt2); font-weight: 600; border-radius: 6px; justify-content: center;">
+              <i class="fa-solid fa-cloud-arrow-up" style="color:var(--p1);"></i> + Cột Nhân vật
+            </button>
+            <button type="button" class="act-btn" id="bp-btn-upload-emojis" title="Tải lên nhiều ảnh cho cột Emoji"
+              style="padding: 5px 2px; font-size: 0.68rem; gap: 3px; background: #ffffff; border: 1px solid var(--border); color: var(--txt2); font-weight: 600; border-radius: 6px; justify-content: center;">
+              <i class="fa-solid fa-cloud-arrow-up" style="color:var(--p2);"></i> + Cột Emoji
+            </button>
+            <button type="button" class="act-btn" id="bp-btn-upload-results" title="Tải lên nhiều ảnh cho cột Ảnh mới"
+              style="padding: 5px 2px; font-size: 0.68rem; gap: 3px; background: #ffffff; border: 1px solid var(--border); color: var(--txt2); font-weight: 600; border-radius: 6px; justify-content: center;">
+              <i class="fa-solid fa-cloud-arrow-up" style="color:var(--p3);"></i> + Cột Ảnh mới
+            </button>
+          </div>
+        </div>
+      </div> <!-- /#tab-content-blendplus -->
+
+      <!-- TAB 2: POKEMON FUSION CONTENT -->
+      <div class="tab-content" id="tab-content-pokemon" style="display:none">
+
+        <!--  Character Upload  -->
+        <div class="section-label"><i class="fa-solid fa-user-astronaut"></i> Ảnh nhân vật gốc</div>
+        <div class="upload-card card-1" id="poke-card-1" onclick="pickPokeCharFile()"
+          style="cursor:pointer; min-height:95px;">
+          <input type="file" id="poke-file-char" accept="image/*" hidden />
+          <div class="card-empty" id="poke-body-char">
+            <div class="empty-icon" style="font-size:1.3rem"><i class="fa-solid fa-user"></i></div>
+            <div class="empty-hint">Chọn nh nhn vt</div>
+          </div>
+          <div class="card-preview" id="poke-prev-char" style="display:none">
+            <img id="poke-pimg-char" alt="Pokemon Char" />
+            <button class="x-btn" onclick="event.stopPropagation();clearPokeCharSlot()"><i
+                class="fa-solid fa-xmark"></i></button>
+          </div>
+        </div>
+
+        <!--  Pokemon Blend Table (2 c"t: Pokemon Monster | Th Pokemon kết quả)  -->
+        <div class="section-label" style="margin-top:8px;">
+          <i class="fa-solid fa-layer-group"></i> Các cặp thẻ Pokemon lai
+          <span class="gallery-count" id="poke-steps-count"></span>
+        </div>
+
+        <!-- Hidden file inputs for Pokemon Tab -->
+        <input type="file" id="poke-monster-multi-input" accept="image/*" multiple hidden />
+        <input type="file" id="poke-card-multi-input" accept="image/*" multiple hidden />
+
+        <div class="bt-wrap">
+          <!-- Column headers -->
+          <div class="bt-header">
+            <div class="bt-hcol bt-hcol-emoji"><i class="fa-solid fa-dragon"></i> Pokemon</div>
+            <div class="bt-hcol bt-hcol-fx"><i class="fa-solid fa-wand-magic-sparkles"></i> FX</div>
+            <div class="bt-hcol bt-hcol-result"><i class="fa-solid fa-id-card"></i> Thẻ kết quả</div>
+          </div>
+          <!-- Dynamic rows rendered by JS -->
+          <div id="poke-blend-table-body"></div>
+          <!-- Empty state hint -->
+          <div class="bt-empty-hint" id="poke-bt-empty-hint">
+            <i class="fa-solid fa-arrow-up-from-bracket"></i>
+            <span>Nhấn <b>+</b> bên dưới  thêm ảnh Pokemon & Th</span>
+          </div>
+          <!-- Add row -->
+          <div class="bt-add-row" id="poke-bt-add-row">
+            <button class="bt-add-btn" id="poke-bt-add-monster" title="Thêm ảnh Pokemon">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+            <div class="bt-add-center"></div>
+            <button class="bt-add-btn" id="poke-bt-add-card" title="Thêm ảnh Thẻ Pokemon">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+        </div>
+
+      </div> <!-- /#tab-content-pokemon -->
+
+      <!-- TAB 3: BATTLE SOLO CONTENT -->
+      <div class="tab-content" id="tab-content-battle" style="display:none;">
+
+        <!--  1. Hero Characters (3 Slots) & Name  -->
+        <div class="section-label"><i class="fa-solid fa-user-ninja"></i> 3 Trạng thái của nhân vật chính</div>
+        <div class="ctrl-card mb-3 p-2">
+          <label class="ctrl-lbl mb-1"><i class="fa-solid fa-signature"></i> Tên nhân vật chính</label>
+          <input type="text" class="ctrl-input" id="battle-hero-name" value="JESUS"
+            placeholder="Nhập tên nhân vật chính..." />
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 mb-3">
+          <!-- Hero 1: Lowered hands / idle -->
+          <div class="battle-card-slot" onclick="pickBattleFile('jesus-1')" style="cursor:pointer">
+            <input type="file" id="file-jesus-1" accept="image/*" hidden />
+            <div class="card-tag">1. Hạ tay</div>
+            <div class="card-empty" id="body-jesus-1">
+              <div class="empty-icon"><i class="fa-regular fa-image"></i></div>
+              <div class="empty-hint">ảnh 1</div>
+            </div>
+            <div class="card-preview" id="prev-jesus-1" style="display:none">
+              <img id="pimg-jesus-1" alt="Jesus 1" />
+              <button class="x-btn" onclick="event.stopPropagation();clearBattleSlot('jesus-1')"><i
+                  class="fa-solid fa-xmark"></i></button>
+            </div>
+          </div>
+
+          <!-- Hero 2: Attack / raised hand -->
+          <div class="battle-card-slot" onclick="pickBattleFile('jesus-2')" style="cursor:pointer">
+            <input type="file" id="file-jesus-2" accept="image/*" hidden />
+            <div class="card-tag">2. Vung tay</div>
+            <div class="card-empty" id="body-jesus-2">
+              <div class="empty-icon"><i class="fa-regular fa-image"></i></div>
+              <div class="empty-hint">ảnh 2</div>
+            </div>
+            <div class="card-preview" id="prev-jesus-2" style="display:none">
+              <img id="pimg-jesus-2" alt="Jesus 2" />
+              <button class="x-btn" onclick="event.stopPropagation();clearBattleSlot('jesus-2')"><i
+                  class="fa-solid fa-xmark"></i></button>
+            </div>
+          </div>
+
+          <!-- Hero 3: Victory / I AM THE TRUTH -->
+          <div class="battle-card-slot" onclick="pickBattleFile('jesus-3')" style="cursor:pointer">
+            <input type="file" id="file-jesus-3" accept="image/*" hidden />
+            <div class="card-tag">3. Thắứng</div>
+            <div class="card-empty" id="body-jesus-3">
+              <div class="empty-icon"><i class="fa-regular fa-image"></i></div>
+              <div class="empty-hint">ảnh 3</div>
+            </div>
+            <div class="card-preview" id="prev-jesus-3" style="display:none">
+              <img id="pimg-jesus-3" alt="Jesus 3" />
+              <button class="x-btn" onclick="event.stopPropagation();clearBattleSlot('jesus-3')"><i
+                  class="fa-solid fa-xmark"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <!--  2. Victory Background Slot (1 Image)  -->
+        <div class="section-label"><i class="fa-solid fa-mountain-sun"></i> Nền cảnh chiến thắứng</div>
+        <div class="upload-card card-1 mb-3" onclick="pickBattleFile('victory-bg')" style="cursor:pointer">
+          <input type="file" id="file-victory-bg" accept="image/*" hidden />
+          <div class="card-tag tag-1"><i class="fa-solid fa-trophy"></i> Nền Thắng (Tùy chọn)</div>
+          <div class="card-empty" id="body-victory-bg">
+            <div class="empty-icon"><i class="fa-regular fa-image"></i></div>
+            <div class="empty-hint">Click chọn ảnh Nền cảnh khi nhân vật chính chiến thắứng</div>
+          </div>
+          <div class="card-preview" id="prev-victory-bg" style="display:none">
+            <img id="pimg-victory-bg" alt="Victory BG" />
+            <button class="x-btn" onclick="event.stopPropagation();clearBattleSlot('victory-bg')"><i
+                class="fa-solid fa-xmark"></i></button>
+          </div>
+        </div>
+
+        <!--  2.5 Phong cách Màu Nền (Dùng khi không có ảnh nền)  -->
+        <div class="section-label"><i class="fa-solid fa-palette"></i> Màu Nền (Khi đối thủ không có ảnh nền)</div>
+        <div class="ctrl-card mb-3">
+          <select id="battle-bg-style-select" class="ctrl-select" onchange="updateBattleBgStyle(this.value)">
+            <option value="solid-red">x Full Mu  (Crimson Red)</option>
+            <option value="solid-dark">: Full Mu Xm en (Dark Charcoal)</option>
+            <option value="solid-purple">🟣 Full Màu Tím Cyber (Cyber Purple)</option>
+            <option value="solid-blue">x" Full Màu Xanh Dương (Deep Blue)</option>
+            <option value="solid-gold">xx Full Màu Vàng Kim (Royal Gold)</option>
+            <option value="gradient-fire">x Full Gradient  La (Fire Arena)</option>
+          </select>
+        </div>
+
+        <!--  3. Opponents & Scenes List  -->
+        <div class="section-label">
+          <i class="fa-solid fa-skull"></i> i th & Nn cnh (Ti a 8 i th)
+          <span class="gallery-count" id="battle-steps-count"></span>
+        </div>
+
+        <!-- Hidden Inputs for Multi-upload -->
+        <input type="file" id="battle-opponents-input" accept="image/*" multiple hidden />
+        <input type="file" id="battle-scenes-input" accept="image/*" multiple hidden />
+
+        <div class="blend-table-wrap">
+          <div class="bt-header">
+            <div class="bt-col bt-col-head">nh i th</div>
+            <div class="bt-col bt-col-head">Tên đối thủ</div>
+            <div class="bt-col bt-col-head">Nền (Cảnh)</div>
+          </div>
+
+          <div class="bt-body" id="battle-table-body">
+            <!-- Dynamically generated rows for Opponent + Scene pairs -->
+          </div>
+
+          <!-- Add row buttons -->
+          <div class="bt-add-row" id="battle-bt-add-row">
+            <button class="bt-add-btn" id="battle-add-opponents" title="Thm i th">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+            <div class="bt-add-center"></div>
+            <button class="bt-add-btn" id="battle-add-scenes" title="Thêm nền cảnh">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+        </div>
+
+      </div> <!-- /#tab-content-battle -->
+
+      <!-- TAB 4: PUZZLE GAME CONTENT -->
+      <div class="tab-content" id="tab-content-puzzle" style="display:none;">
+        <div class="section-label"><i class="fa-solid fa-puzzle-piece"></i> nh Puzzle Gc</div>
+        <div class="upload-card card-1 mb-3" onclick="document.getElementById('file-puzzle-main').click()"
+          style="cursor:pointer">
+          <input type="file" id="file-puzzle-main" accept="image/*" hidden />
+          <div class="card-tag tag-1"><i class="fa-solid fa-image"></i> ảnh Puzzle (9 mảnh)</div>
+          <div class="card-empty" id="body-puzzle-main">
+            <div class="empty-icon"><i class="fa-regular fa-image"></i></div>
+            <div class="empty-hint">Click chn 1 hnh nh  ct thnh 9 mnh Jigsaw</div>
+          </div>
+          <div class="card-preview" id="prev-puzzle-main" style="display:none">
+            <img id="pimg-puzzle-main" alt="Puzzle Main" />
+            <button class="x-btn" onclick="event.stopPropagation();clearPuzzleSlot()"><i
+                class="fa-solid fa-xmark"></i></button>
+          </div>
+        </div>
+
+        <div class="section-label"><i class="fa-solid fa-shapes"></i> Hình dáng mảnh ghép</div>
+        <div class="ctrl-card mb-3">
+          <select id="puzzle-shape-select" class="ctrl-select" onchange="renderPuzzleGame()">
+            <option value="notched">x: Khiên lượn sóng (Mặc định)</option>
+            <option value="heart">d Tri tim (Heart)</option>
+            <option value="circle">a Hnh trn (Circle)</option>
+            <option value="trapezoid">x -  Hnh thaứng (Trapezoid)</option>
+            <option value="hexagon">! Hnh lc gic (Hexagon)</option>
+            <option value="diamond">x Hnh thoi (Diamond)</option>
+            <option value="squircle">x Hnh vuứng bo gc (Squircle)</option>
+          </select>
+        </div>
+
+        <div class="section-label"><i class="fa-solid fa-palette"></i> Mu 3 mnh ghp pha trn</div>
+        <div class="ctrl-card">
+          <div class="ctrl-item">
+            <label class="ctrl-lbl">xa Mảnh 1</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="color" class="ctrl-input-color" id="puzzle-color-1" value="#22c55e"
+                onchange="renderPuzzleGame()" />
+              <label style="font-size:0.75rem;color:#94a3b8;">T mu</label>
+              <input type="checkbox" id="puzzle-color-1-enable" checked onchange="handlePuzzleColorToggle(0)" />
+            </div>
+          </div>
+          <div class="ctrl-item">
+            <label class="ctrl-lbl">x: Mảnh 2</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="color" class="ctrl-input-color" id="puzzle-color-2" value="#eab308"
+                onchange="renderPuzzleGame()" />
+              <label style="font-size:0.75rem;color:#94a3b8;">T mu</label>
+              <input type="checkbox" id="puzzle-color-2-enable" onchange="handlePuzzleColorToggle(1)" />
+            </div>
+          </div>
+          <div class="ctrl-item">
+            <label class="ctrl-lbl">x Mảnh 3</label>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <input type="color" class="ctrl-input-color" id="puzzle-color-3" value="#ec4899"
+                onchange="renderPuzzleGame()" />
+              <label style="font-size:0.75rem;color:#94a3b8;">T mu</label>
+              <input type="checkbox" id="puzzle-color-3-enable" checked onchange="handlePuzzleColorToggle(2)" />
+            </div>
+          </div>
+        </div>
+
+        <div class="blend-ctrl-bar mt-4">
+          <button class="btn-blend-run" id="btn-puzzle-run" onclick="startPuzzleAnimation()">
+            <i class="fa-solid fa-rocket"></i> Bt u Khxi chy
+          </button>
+        </div>
+      </div> <!-- /#tab-content-puzzle -->
+
+      <!-- TAB 5: FLASHLIGHT / SOI N CONTENT -->
+      <div class="tab-content" id="tab-content-flashlight" style="display:none;">
+
+        <!-- Siứngle Image Upload Card -->
+        <div class="section-label"><i class="fa-solid fa-image"></i> Ti ln hnh nh</div>
+        <div class="upload-card card-1 mb-3" onclick="document.getElementById('file-fl-multi').click()"
+          style="cursor:pointer">
+          <input type="file" id="file-fl-multi" accept="image/*" hidden />
+          <div class="card-tag tag-1"><i class="fa-solid fa-cloud-arrow-up"></i> Chọn nh PNG/JPG</div>
+          <div class="card-empty" id="body-fl-multi">
+            <div class="empty-icon"><i class="fa-regular fa-image"></i></div>
+            <div class="empty-hint">Click  chn hnh nh</div>
+          </div>
+          <div class="card-preview" id="prev-fl-multi" style="display:none">
+            <div style="display:flex;justify-content:center;align-items:center;width:100%;">
+              <div
+                style="position:relative;width:70%;height:90px;border-radius:8px;overflow:hidden;background:#0f172a;">
+                <img id="pimg-fl-1" alt="nh" style="width:100%;height:100%;object-fit:contain;" />
+              </div>
+            </div>
+            <button class="x-btn" onclick="event.stopPropagation();clearFlashlightMulti()"><i
+                class="fa-solid fa-xmark"></i></button>
+          </div>
+        </div>
+
+        <!-- Image Scale Configuration -->
+        <div class="section-label"><i class="fa-solid fa-up-right-and-down-left-from-center"></i> Kch th:c hnh nh (%)</div>
+        <div class="ctrl-card mb-3">
+          <div class="ctrl-item">
+            <div style="position:relative;margin-bottom:10px;">
+              <input type="number" id="fl-img-scale-val" min="20" max="300" value="100"
+                oninput="updateFlashlightImgScale(this.value, true)" class="ctrl-input fi-num-input"
+                
+                
+                 />
+              <span
+                class="fi-num-unit">%</span>
+            </div>
+            <div style="display:flex;align-items:center;">
+              <input type="range" id="fl-img-scale-range" min="20" max="300" value="100"
+                oninput="updateFlashlightImgScale(this.value)" style="width:100%;" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Image Vertical Position (OffsetY) Configuration -->
+        <div class="section-label"><i class="fa-solid fa-arrows-up-down"></i> Vị trí hình ảnh (Ln / Xuứng)</div>
+        <div class="ctrl-card mb-3">
+          <div class="ctrl-item">
+            <div style="position:relative;margin-bottom:10px;">
+              <input type="number" id="fl-img-offsety-val" min="-300" max="300" value="0"
+                oninput="updateFlashlightImgOffsetY(this.value, true)" class="ctrl-input fi-num-input"
+                
+                
+                 />
+              <span
+                class="fi-num-unit">px</span>
+            </div>
+            <div style="display:flex;align-items:center;">
+              <input type="range" id="fl-img-offsety-range" min="-300" max="300" value="0"
+                oninput="updateFlashlightImgOffsetY(this.value)" style="width:100%;" />
+            </div>
+          </div>
+        </div>
+
+        <!-- <div class="blend-ctrl-bar mt-4">
+          <button class="btn-blend-run" id="btn-fl-run" onclick="startFlashlightAnimation()">
+            <i class="fa-solid fa-rocket"></i> Bt u Khxi chy
+          </button>
+        </div> -->
+      </div> <!-- /#tab-content-flashlight -->
+
+      <!-- TAB 7: SHADOW MATCH / GH0P B - NG CONTENT -->
+      <div class="tab-content" id="tab-content-shadowmatch" style="display:none;">
+
+        <!-- Multi Image Upload Card -->
+        <div class="section-label"><i class="fa-solid fa-images"></i> Ti ln 3 hnh nh PNG</div>
+        <div class="upload-card card-1 mb-3" onclick="document.getElementById('file-sm-multi').click()" style="cursor:pointer">
+          <input type="file" id="file-sm-multi" accept="image/*" multiple hidden />
+          <div class="card-tag tag-1"><i class="fa-solid fa-cloud-arrow-up"></i> Chọn cc nh PNG</div>
+          <div class="card-empty" id="body-sm-multi">
+            <div class="empty-icon"><i class="fa-regular fa-images"></i></div>
+            <div class="empty-hint">Click  chn cc hnh nh</div>
+          </div>
+          <div class="card-preview" id="prev-sm-multi" style="display:none">
+            <div id="sm-preview-list" style="display:flex;gap:8px;justify-content:center;align-items:center;width:100%;flex-wrap:wrap;"></div>
+            <button class="x-btn" onclick="event.stopPropagation();clearShadowMatchImages()"><i class="fa-solid fa-xmark"></i></button>
+          </div>
+        </div>
+
+        <!-- Shadow Target Select -->
+        <div class="section-label"><i class="fa-solid fa-user-ninja"></i> Chọn nh lm Bứng en</div>
+        <div class="ctrl-card mb-3">
+          <select id="sm-shadow-select" class="ctrl-select" onchange="updateShadowMatchTarget(this.value)">
+            <option value="0">ảnh 1 (Mc 9nh)</option>
+            <option value="1">ảnh 2</option>
+            <option value="2">ảnh 3</option>
+          </select>
+        </div>
+
+        <!-- Image Scale Configuration -->
+        <div class="section-label"><i class="fa-solid fa-up-right-and-down-left-from-center"></i> Kch th:c hnh nh (%)</div>
+        <div class="ctrl-card mb-3">
+          <div class="ctrl-item">
+            <div style="position:relative;margin-bottom:10px;">
+              <input type="number" id="sm-img-scale-val" min="20" max="300" value="100"
+                oninput="updateShadowMatchImgScale(this.value, true)" class="ctrl-input fi-num-input"
+                
+                
+                 />
+              <span class="fi-num-unit">%</span>
+            </div>
+            <div style="display:flex;align-items:center;">
+              <input type="range" id="sm-img-scale-range" min="20" max="300" value="100"
+                oninput="updateShadowMatchImgScale(this.value)" style="width:100%;" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Image Vertical Position (OffsetY) Configuration -->
+        <div class="section-label"><i class="fa-solid fa-arrows-up-down"></i> Vị trí hình ảnh (Ln / Xuứng)</div>
+        <div class="ctrl-card mb-3">
+          <div class="ctrl-item">
+            <div style="position:relative;margin-bottom:10px;">
+              <input type="number" id="sm-img-offsety-val" min="-300" max="300" value="0"
+                oninput="updateShadowMatchImgOffsetY(this.value, true)" class="ctrl-input fi-num-input"
+                
+                
+                 />
+              <span class="fi-num-unit">px</span>
+            </div>
+            <div style="display:flex;align-items:center;">
+              <input type="range" id="sm-img-offsety-range" min="-300" max="300" value="0"
+                oninput="updateShadowMatchImgOffsetY(this.value)" style="width:100%;" />
+            </div>
+          </div>
+        </div>
+      </div> <!-- /#tab-content-shadowmatch -->
+
+      <!-- TAB 6: CLIMAX AUTOMATION 15S CONTENT -->
+      <div class="tab-content" id="tab-content-climax" style="display:none;">
+
+        <!--  1. Hero Normal Form (Pomni Bình thường)  -->
+        <div class="section-label"><i class="fa-solid fa-user"></i> 1. Pomni Bình thường (Giao chin)</div>
+        <div class="upload-card card-1 mb-2" onclick="pickClimaxFile('hero-normal')"
+          style="cursor:pointer; min-height:75px;">
+          <input type="file" id="file-climax-hero-normal" accept="image/*" hidden />
+          <div class="card-empty" id="body-climax-hero-normal">
+            <div class="empty-icon" style="font-size:1.1rem"><i class="fa-solid fa-face-smile"></i></div>
+            <div class="empty-hint">Click chn nh Pomni bnh thứng (Lc u)</div>
+          </div>
+          <div class="card-preview" id="prev-climax-hero-normal" style="display:none">
+            <img id="pimg-climax-hero-normal" alt="Hero Normal" />
+            <button class="x-btn" onclick="event.stopPropagation();clearClimaxSlot('hero-normal')"><i
+                class="fa-solid fa-xmark"></i></button>
+          </div>
+        </div>
+
+        <!--  2. Hero Weak Form (Pomni Tht bi / Thua cu"c)  -->
+        <div class="section-label"><i class="fa-solid fa-heart-crack"></i> 2. Pomni Thất bại (Nằm run rẩy)</div>
+        <div class="upload-card card-2 mb-2" onclick="pickClimaxFile('hero-weak')"
+          style="cursor:pointer; min-height:75px;">
+          <input type="file" id="file-climax-hero-weak" accept="image/*" hidden />
+          <div class="card-empty" id="body-climax-hero-weak">
+            <div class="empty-icon" style="font-size:1.1rem"><i class="fa-solid fa-face-frown-open"></i></div>
+            <div class="empty-hint">Click chn nh Pomni b9 nh gc</div>
+          </div>
+          <div class="card-preview" id="prev-climax-hero-weak" style="display:none">
+            <img id="pimg-climax-hero-weak" alt="Hero Weak" />
+            <button class="x-btn" onclick="event.stopPropagation();clearClimaxSlot('hero-weak')"><i
+                class="fa-solid fa-xmark"></i></button>
+          </div>
+        </div>
+
+        <!--  3. Hero Awaken / Super Form (Pomni Bứng n" sc mnh)  -->
+        <div class="section-label"><i class="fa-solid fa-fire-flame-curved"></i> 3. Pomni Bứng n" sc mnh (Thc t0nh)
+        </div>
+        <div class="upload-card card-3 mb-2" onclick="pickClimaxFile('hero-stroứng')"
+          style="cursor:pointer; min-height:75px;">
+          <input type="file" id="file-climax-hero-stroứng" accept="image/*" hidden />
+          <div class="card-empty" id="body-climax-hero-stroứng">
+            <div class="empty-icon" style="font-size:1.1rem"><i class="fa-solid fa-wand-magic-sparkles"></i></div>
+            <div class="empty-hint">Click chn nh Pomni siu sc mnh</div>
+          </div>
+          <div class="card-preview" id="prev-climax-hero-stroứng" style="display:none">
+            <img id="pimg-climax-hero-stroứng" alt="Hero Stroứng" />
+            <button class="x-btn" onclick="event.stopPropagation();clearClimaxSlot('hero-stroứng')"><i
+                class="fa-solid fa-xmark"></i></button>
+          </div>
+        </div>
+
+        <!--  4. Opponent Sprite (Jax 1 nh duy nht)  -->
+        <div class="section-label"><i class="fa-solid fa-skull-crossbones"></i> 4. Jax (Dứng giao chin & bay i)</div>
+        <div class="upload-card card-1 mb-2" onclick="pickClimaxFile('opponent')"
+          style="cursor:pointer; min-height:75px;">
+          <input type="file" id="file-climax-opponent" accept="image/*" hidden />
+          <div class="card-empty" id="body-climax-opponent">
+            <div class="empty-icon" style="font-size:1.1rem"><i class="fa-solid fa-ghost"></i></div>
+            <div class="empty-hint">Click chn 1 nh Jax duy nht</div>
+          </div>
+          <div class="card-preview" id="prev-climax-opponent" style="display:none">
+            <img id="pimg-climax-opponent" alt="Opponent" />
+            <button class="x-btn" onclick="event.stopPropagation();clearClimaxSlot('opponent')"><i
+                class="fa-solid fa-xmark"></i></button>
+          </div>
+        </div>
+
+        <!--  5. Background Upload  -->
+        <div class="section-label"><i class="fa-solid fa-image"></i> 5. nh Nn cnh (Ty chn)</div>
+        <div class="upload-card card-2 mb-2" onclick="pickClimaxFile('bg')" style="cursor:pointer; min-height:75px;">
+          <input type="file" id="file-climax-bg" accept="image/*" hidden />
+          <div class="card-empty" id="body-climax-bg">
+            <div class="empty-icon" style="font-size:1.1rem"><i class="fa-solid fa-mountain-sun"></i></div>
+            <div class="empty-hint">Click chn nh Nn cnh (Nu c)</div>
+          </div>
+          <div class="card-preview" id="prev-climax-bg" style="display:none">
+            <img id="pimg-climax-bg" alt="Climax BG" />
+            <button class="x-btn" onclick="event.stopPropagation();clearClimaxSlot('bg')"><i
+                class="fa-solid fa-xmark"></i></button>
+          </div>
+        </div>
+
+        <!--  6. Phoứng cch Mu Nn (Nu khứng chn nh nn)  -->
+        <div class="section-label"><i class="fa-solid fa-palette"></i> 6. Phoứng cch Mu Nn Full (T0 l! 1:1)</div>
+        <div class="ctrl-card mb-2">
+          <select id="climax-bg-style-select" class="ctrl-select" onchange="updateClimaxBgStyle(this.value)">
+            <option value="solid-red">x Full Mu  (Crimson Red)</option>
+            <option value="solid-dark">: Full Mu Xm en (Dark Charcoal)</option>
+            <option value="solid-purple">🟣 Full Màu Tím Cyber (Cyber Purple)</option>
+            <option value="solid-blue">x" Full Màu Xanh Dương (Deep Blue)</option>
+            <option value="solid-gold">xx Full Màu Vàng Kim (Royal Gold)</option>
+            <option value="gradient-fire">x Full Gradient  La (Fire Arena)</option>
+          </select>
+        </div>
+
+      </div> <!-- /#tab-content-climax -->
+
+    </aside>
+
+    <!-- ════════════════════════════════
+       RIGHT PANEL  -  9:16 Theater
+  ════════════════════════════════ -->
+    <main class="right-panel" id="right-panel">
+      <div class="theater-shell">
+
+        <!-- 9:16 box -->
+        <div class="theater" id="theater">
+
+          <!-- Emoji Header Bar (inside theater, display only) -->
+          <div class="emoji-header-bar" id="emoji-header-bar">
+            <div class="emoji-header-inner" id="emoji-header-inner">
+              <span class="emoji-header-placeholder" id="emoji-header-placeholder">Emoji s hin th9 x y S</span>
+            </div>
+          </div>
+          <!-- Full-frame Character Layer (Background) -->
+          <div class="bg-char-wrap" id="bg-char-wrap">
+            <img id="bg-char-img" alt="" />
+          </div>
+
+          <!-- Flyiứng images -->
+          <div class="fly-box fly-box--1" id="fly-1">
+            <img id="fly-img-1" alt="" />
+          </div>
+          <div class="fly-box fly-box--2" id="fly-2">
+            <img id="fly-img-2" alt="" />
+          </div>
+
+          <!-- Blend canvas -->
+          <canvas id="blend-canvas"></canvas>
+
+          <!-- Result reveal -->
+          <div class="result-wrap" id="result-reveal">
+            <div class="result-glow"></div>
+            <img id="result-img" alt="Result" />
+          </div>
+
+          <!-- Result Badge Overlay -->
+          <div class="result-badge" id="result-badge"></div>
+
+          <!-- Final Grid Screen (End View) -->
+          <div class="final-grid-wrap" id="final-grid-wrap">
+            <div class="final-grid-top" id="final-grid-top"></div>
+            <div class="final-question-box" id="final-question-box">WHICH VERSION DO YOU LIKE MOST?</div>
+            <div class="final-grid-bottom" id="final-grid-bottom"></div>
+          </div>
+
+          <!-- Step label overlay -->
+          <div class="step-label-overlay" id="step-label-overlay"></div>
+
+          <!-- Pokemon Card Reveal Overlay (Siứngle Card View during step) -->
+          <div class="poke-card-overlay" id="poke-card-overlay">
+            <div class="poke-card-full-container" id="poke-card-shell">
+              <img id="poke-card-art-img" class="poke-card-full-img" src="" alt="Pokemon Card" />
+              <div class="poke-card-art-shine"></div>
+            </div>
+            <!-- Interactive Question Overlay Text Outside Card -->
+            <div class="poke-card-question-box" id="poke-card-question-display">
+              HOW MUCH POWER DOES THIS POKEMON CARD DESERVE? LET ME KNOW IN THE COMMENTS!
+            </div>
+          </div>
+
+          <!-- Pokemon Card Fan-out End Screen Overlay -->
+          <div class="poke-fan-screen-overlay" id="poke-fan-screen-overlay">
+            <div class="poke-fan-cards-container" id="poke-fan-cards-container">
+              <!-- Dynamically populated card deck -->
+            </div>
+            <div class="poke-card-question-box" id="poke-fan-question-display">
+              HOW MUCH POWER DOES THIS POKEMON CARD DESERVE? LET ME KNOW IN THE COMMENTS!
+            </div>
+          </div>
+
+          <!-- Solo Battle Theater Overlay -->
+          <div class="battle-theater-overlay" id="battle-theater-overlay">
+            <!-- Layer 1: Background Scene -->
+            <div class="battle-bg-wrap" id="battle-bg-wrap">
+              <img id="battle-bg-img" alt="Background Scene" />
+            </div>
+
+            <!-- Layer 2: Opponent Sprite -->
+            <div class="battle-opponent-wrap" id="battle-opponent-wrap">
+              <img id="battle-opponent-img" alt="Opponent" />
+            </div>
+
+            <!-- Layer 3: Slash / Claw FX Overlay -->
+            <div class="battle-slash-wrap" id="battle-slash-wrap">
+              <img id="battle-slash-img" src="moứng-vuot.pứng" alt="Slash FX" />
+            </div>
+
+            <!-- Layer 4: Jesus Sprite -->
+            <div class="battle-jesus-wrap" id="battle-jesus-wrap">
+              <img id="battle-jesus-img" alt="Jesus" />
+            </div>
+
+            <!-- Layer 4 Top: Health Bars & Names -->
+            <div class="battle-health-ui" id="battle-health-ui">
+              <!-- Jesus HP Bar -->
+              <div class="hp-side hp-left">
+                <div class="hp-name" id="battle-jesus-hp-name">JESUS</div>
+                <div class="hp-bar-box">
+                  <span class="hp-heart"><i class="fa-solid fa-heart"></i></span>
+                  <div class="hp-bar-track">
+                    <div class="hp-bar-fill jesus-hp" id="jesus-hp-bar" style="width: 100%;"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Monster HP Bar -->
+              <div class="hp-side hp-right">
+                <div class="hp-name" id="battle-monster-hp-name">MONSTERS</div>
+                <div class="hp-bar-box">
+                  <div class="hp-bar-track">
+                    <div class="hp-bar-fill monster-hp" id="monster-hp-bar" style="width: 100%;"></div>
+                  </div>
+                  <span class="hp-heart"><i class="fa-solid fa-heart"></i></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Victory End Screen Overlay (Only Main Character + Victory Background) -->
+            <div class="battle-victory-overlay" id="battle-victory-overlay">
+              <div class="battle-victory-bg-wrap" id="battle-victory-bg-wrap">
+                <img id="battle-victory-bg-img" alt="Victory Background" />
+              </div>
+              <div class="battle-victory-char-wrap" id="battle-victory-char-wrap">
+                <img id="battle-victory-img" alt="Victory Hero" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Puzzle Game Overlay Container (Tab 4) -->
+          <div class="puzzle-theater-overlay" id="puzzle-theater-overlay">
+            <!-- Top variant pieces container -->
+            <div class="puzzle-top-row" id="puzzle-top-row">
+              <!-- 3 colored variant pieces generated here -->
+            </div>
+            <!-- Custom 3x3 puzzle board container -->
+            <div id="custom-puzzle-board" class="custom-puzzle-board"></div>
+          </div>
+
+          <!-- Flashlight / Soi Đèn Overlay Container (Tab 5) -->
+          <div class="flashlight-theater-overlay" id="flashlight-theater-overlay">
+            <!-- Bottom Row: Main Blackout Image with Flashlight Reveal Mask -->
+            <div class="flashlight-bottom-stage" id="flashlight-bottom-stage">
+              <canvas id="fl-color-canvas" class="fl-layer-color" width="1080" height="1920"></canvas>
+              <canvas id="fl-mask-canvas" class="fl-layer-mask" width="1080" height="1920"></canvas>
+            </div>
+          </div>
+
+          <!-- Shadow Match / Ghép Bóứng Overlay Container (Tab 7) -->
+          <div class="shadowmatch-theater-overlay" id="shadowmatch-theater-overlay">
+            <div class="sm-stage" id="sm-stage">
+              <canvas id="sm-shadow-canvas" class="sm-layer-shadow" width="1080" height="1920"></canvas>
+              <!-- Draggable cards overlay container -->
+              <div id="sm-drag-container" class="sm-drag-container"></div>
+            </div>
+          </div>
+
+          <!-- Climax Automation Split Battle Theater Overlay -->
+          <div class="climax-theater-overlay" id="climax-theater-overlay">
+            <!-- Layer 1: Background Scene & Side Defeat Darkeniứng -->
+            <div class="climax-bg-wrap" id="climax-bg-wrap">
+              <img id="climax-bg-img" alt="Background Scene" />
+              <div class="climax-split-divider" id="climax-split-divider"></div>
+              <div class="climax-side-darken left" id="climax-darken-left"></div>
+              <div class="climax-side-darken right" id="climax-darken-right"></div>
+            </div>
+
+            <!-- Layer 2: Opponent Sprite (JAX Level 67 - Tri/Phi) -->
+            <div class="climax-opponent-wrap" id="climax-opponent-wrap">
+              <img id="climax-opponent-img" alt="Opponent" />
+            </div>
+
+            <!-- Layer 3: Hero Sprite (POMNI Level 20 - Yu / Thc t0nh) -->
+            <div class="climax-hero-wrap" id="climax-hero-wrap">
+              <img id="climax-hero-img" alt="Hero" />
+            </div>
+
+            <!-- Collision Clash FX Spreads / Sparks -->
+            <div class="climax-clash-fx" id="climax-clash-fx">
+              <div class="clash-spark-center">x</div>
+            </div>
+
+            <!-- Layer 4: Top Dual HP Bars (Pomni Lv 20 vs Jax Lv 67) -->
+            <div class="climax-dual-hp-ui" id="climax-dual-hp-ui">
+              <!-- Left HP Side: Hero (Pomni) -->
+              <div class="climax-hp-side hero-side">
+                <div class="climax-hp-head">
+                  <span class="hp-hero-name" id="climax-hero-name-display">POMNI</span>
+                  <span class="hp-hero-lv" id="climax-hero-lv-display">Lv 20</span>
+                </div>
+                <div class="climax-hp-track">
+                  <div class="climax-hp-fill hero-hp-fill" id="climax-hp-fill" style="width: 100%;"></div>
+                </div>
+              </div>
+
+              <!-- VS Badge -->
+              <div class="climax-vs-badge">VS</div>
+
+              <!-- Right HP Side: Opponent (Jax) -->
+              <div class="climax-hp-side opp-side">
+                <div class="climax-hp-head">
+                  <span class="hp-opp-lv" id="climax-opp-lv-display">Lv 67</span>
+                  <span class="hp-opp-name" id="climax-opp-name-display">JAX</span>
+                </div>
+                <div class="climax-hp-track">
+                  <div class="climax-hp-fill opp-hp-fill" id="climax-opp-hp-fill" style="width: 100%;"></div>
+                </div>
+              </div>
+            </div>
+
+
+            <!-- Layer 5: CTA Emergency Help Banner (5s Countdown) -->
+            <div class="climax-cta-overlay" id="climax-cta-overlay">
+              <div class="climax-countdown-box" id="climax-countdown-box">5</div>
+              <div class="climax-cta-banner" id="climax-cta-banner">
+                <span id="climax-cta-text-line1">POMNI NEEDS POWER!</span>
+                <span id="climax-cta-text-line2">LIKE & SUBSCRIBE TO SAVE HER!</span>
+              </div>
+              <div class="climax-power-bar-wrap">
+                <div class="climax-power-bar-label">RECHARGING ENERGY... <span id="climax-power-pct">0%</span></div>
+                <div class="climax-power-track">
+                  <div class="climax-power-fill" id="climax-power-fill" style="width: 0%;"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Layer 3.5: Dragon / Super Saiyan Energy Charge Aura & Lightniứng FX -->
+            <div class="climax-aura-fx" id="climax-aura-fx">
+              <div class="saiyan-aura-flame"></div>
+              <div class="aura-fire-riứng"></div>
+              <div class="saiyan-sparks">a x a</div>
+            </div>
+
+            <!-- Layer 6: Flash White Explosion & Shake Screen FX -->
+            <div class="climax-flash-fx" id="climax-flash-fx"></div>
+
+            <!-- Layer 7: Final Victory KO Celebration Screen -->
+            <div class="climax-finish-banner" id="climax-finish-banner">
+              <div class="finish-title">VICTORY KO!</div>
+              <div class="finish-sub">POMNI DEFEATED JAX! x </div>
+            </div>
+          </div>
+
+        </div><!-- .theater -->
+      </div>
+    </main>
+
+    <!-- ════════════════════════════════
+       RIGHT SIDEBAR  -  Settings
+    ════════════════════════════════ -->
+    <aside class="right-sidebar">
+
+      <!-- Header -->
+      <div class="panel-header">
+        <div class="logo">
+          <span class="logo-icon" style="font-size:1.2rem"><i class="fa-solid fa-sliders"></i></span>
+          <span class="logo-text">Cài đặt<span class="logo-accent"> kết quả</span></span>
+        </div>
+        <p class="header-sub">Hiệu ứng • Final screen • Tải xuống</p>
+      </div>
+
+      <!-- RIGHT SIDEBAR CONTENT: TAB 1 (BLEND) -->
+      <div class="right-tab-content" id="right-tab-content-blend">
+        <!-- ── Final Screen Settings ── -->
+        <div class="section-label"><i class="fa-solid fa-square-poll-vertical"></i> Final Screen / Màn kết thúc</div>
+        <div class="ctrl-card">
+          <div class="ctrl-item">
+            <label class="ctrl-lbl"><i class="fa-solid fa-circle-question"></i> Question / Câu hỏi <span
+                class="hint-sub">(Tiếng Anh)</span></label>
+            <div class="question-input-wrap">
+              <input type="text" class="ctrl-input" id="final-question-input" value="VOTE FOR YOUR FAVORITE VERSION!"
+                placeholder="VOTE FOR YOUR FAVORITE VERSION!" list="question-suggestions" autocomplete="off" />
+              <button class="question-suggest-btn" id="question-suggest-btn" title="Gợi ý câu hỏi">
+                <i class="fa-solid fa-lightbulb"></i>
+              </button>
+            </div>
+            <div class="question-chips" id="question-chips">
+              <button class="q-chip" onclick="applyQuestion(this)">Which version do you like most?</button>
+              <button class="q-chip" onclick="applyQuestion(this)">Please help me choose a character!</button>
+              <button class="q-chip" onclick="applyQuestion(this)">Which hero would you pick?</button>
+              <button class="q-chip q-chip-active" onclick="applyQuestion(this)">Vote for your favorite
+                version!</button>
+              <button class="q-chip" onclick="applyQuestion(this)">Who should be the final boss?</button>
+              <button class="q-chip" onclick="applyQuestion(this)">Which outfit suits them best?</button>
+              <button class="q-chip" onclick="applyQuestion(this)">Comment your choice below!</button>
+              <button class="q-chip" onclick="applyQuestion(this)">Which power-up is the strongest?</button>
+            </div>
+          </div>
+          <div class="ctrl-item">
+            <label class="ctrl-lbl"><i class="fa-solid fa-tags"></i> Badge Type / Loại nhãn</label>
+            <select class="ctrl-select" id="badge-type-select" onchange="refreshEmojiHeader()">
+              <option value="none" selected>Không có gì (Ẩn nhãn)</option>
+              <option value="actions">Actions (Like / Comment / Share / Subscribe)</option>
+              <option value="numbers">Numbers (1, 2, 3, 4)</option>
+              <option value="hearts">Hearts (#1, #2, #3, #4)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ── Effect Controls ── -->
+        <div class="section-label" style="margin-top:6px;"><i class="fa-solid fa-wand-magic-sparkles"></i> Cài đặt hiệu
+          ứng</div>
+        <div class="ctrl-card">
+          <div class="ctrl-item">
+            <label class="ctrl-lbl"><i class="fa-solid fa-hurricane"></i> Cường độ xoáy <span class="ctrl-num"
+                id="val-swirl">100</span></label>
+            <input type="range" class="ctrl-range" id="sl-swirl" min="10" max="100" value="100"
+              oninput="syncVal('swirl')" />
+          </div>
+          <div class="ctrl-item">
+            <label class="ctrl-lbl"><i class="fa-solid fa-bolt"></i> Tốc độ blend <span class="ctrl-num"
+                id="val-speed">7</span></label>
+            <input type="range" class="ctrl-range" id="sl-speed" min="1" max="10" value="7"
+              oninput="syncVal('speed')" />
+          </div>
+        </div>
+
+        <!-- ── Action Buttons ── -->
+        <div class="section-label" style="margin-top:6px;"><i class="fa-solid fa-play"></i> Điều khiển</div>
+        <div class="action-col">
+          <button class="act-btn act-blend" id="btn-blend" onclick="runBlend()"><i
+              class="fa-solid fa-wand-magic-sparkles"></i> Bắt đầu Blend</button>
+          <div class="action-row-sm">
+            <button class="act-btn act-reset" onclick="resetAll()"><i class="fa-solid fa-rotate-left"></i>
+              Reset</button>
+            <button class="act-btn act-clear" onclick="clearAllUploadedImages()"
+              title="Xóa tất cả ảnh đã tải lên (Nhân vật, Emoji, Kết quả)"><i class="fa-solid fa-trash-can"></i> Dọn
+              dẹp</button>
+            <button class="act-btn act-dl" id="btn-dl" style="display:none" onclick="downloadFinal()"><i
+                class="fa-solid fa-download"></i> Tải xuống</button>
+          </div>
+        </div>
+      </div> <!-- /#right-tab-content-blend -->
+
+      <!-- RIGHT SIDEBAR CONTENT: TAB 1.5 (BLEND +) -->
+      <div class="right-tab-content" id="right-tab-content-blendplus" style="display:none">
+        <div class="section-label"><i class="fa-solid fa-wand-magic-sparkles"></i> CÀI ĐẶT BLEND +</div>
+        <div class="ctrl-card">
+          <div class="ctrl-item">
+            <label class="ctrl-lbl"><i class="fa-solid fa-hurricane"></i> Cường độ xoay Fusion <span class="ctrl-num"
+                id="val-bp-swirl">100</span></label>
+            <input type="range" class="ctrl-range" id="sl-bp-swirl" min="10" max="100" value="100"
+              oninput="syncBpVal('swirl')" />
+          </div>
+          <div class="ctrl-item">
+            <label class="ctrl-lbl"><i class="fa-solid fa-bolt"></i> Tốc độ Fusion <span class="ctrl-num"
+                id="val-bp-speed">7</span></label>
+            <input type="range" class="ctrl-range" id="sl-bp-speed" min="1" max="10" value="7"
+              oninput="syncBpVal('speed')" />
+          </div>
+          <div class="ctrl-item">
+            <label class="ctrl-lbl"><i class="fa-solid fa-clock"></i> Thời gian chuyển ảnh (giây)</label>
+            <input type="number" class="ctrl-input" id="bp-char-wait-sec" value="2.0" step="0.5" min="0.5" max="10" />
+          </div>
+          <div class="ctrl-item">
+            <label class="ctrl-lbl"><i class="fa-solid fa-hourglass-half"></i> Thời gian giữ ảnh mới (giây)</label>
+            <input type="number" class="ctrl-input" id="bp-pause-sec" value="2.5" step="0.5" min="1" max="10" />
+          </div>
+        </div>
+
+        <div class="section-label" style="margin-top:6px;"><i class="fa-solid fa-play"></i> ĐIỀU KHIỂN</div>
+        <div class="action-col">
+          <button class="act-btn act-blend" id="btn-bp-blend" onclick="runBlendPlus()"><i
+              class="fa-solid fa-wand-magic-sparkles"></i> Bắt đầu Blend +</button>
+          <div class="action-row-sm">
+            <button class="act-btn act-reset" onclick="resetAll()"><i class="fa-solid fa-rotate-left"></i>
+              Reset</button>
+            <button class="act-btn act-clear" onclick="clearAllBpStreams()" title="Xóa tất cả các luồng Blend +"><i
+                class="fa-solid fa-trash-can"></i> Dọn dẹp</button>
+          </div>
+        </div>
+      </div> <!-- /#right-tab-content-blendplus -->
+
+      <!-- RIGHT SIDEBAR CONTENT: TAB 2 (POKEMON) -->
+      <div class="right-tab-content" id="right-tab-content-pokemon" style="display:none">
+        <div class="section-label"><i class="fa-solid fa-pen-to-square"></i> Tùy chỉnh thẻ Pokemon</div>
+        <div class="ctrl-card" style="padding:12px;">
+          <div class="ctrl-item">
+            <label class="ctrl-lbl"><i class="fa-solid fa-tags"></i> Badge Type / Loại nhãn</label>
+            <select class="ctrl-select" id="poke-badge-type-select" onchange="refreshEmojiHeader()">
+              <option value="numbers" selected>Numbers (1, 2, 3, 4)</option>
+              <option value="actions">Actions (Like / Comment / Share / Subscribe)</option>
+              <option value="hearts">Hearts (#1, #2, #3, #4)</option>
+              <option value="none">Khôứng có gì (Ẩn nhãn)</option>
+            </select>
+          </div>
+          <div class="ctrl-item" style="margin-top:10px;">
+            <label class="ctrl-lbl"><i class="fa-solid fa-comment-dots"></i> Dứng thứng bo / Câu hỏi (H tr xuứng
+              dứng)</label>
+            <textarea class="ctrl-input" id="poke-question-input" rows="3" style="resize:vertical; min-height:60px;"
+              placeholder="Dứng 1: HOW MUCH POWER DOES THIS POKEMON CARD DESERVE?
+Dứng 2: LET ME KNOW IN THE COMMENTS!">HOW MUCH POWER DOES THIS POKEMON CARD DESERVE?
+LET ME KNOW IN THE COMMENTS!</textarea>
+          </div>
+        </div>
+
+        <div class="section-label" style="margin-top:10px;"><i class="fa-solid fa-play"></i> Điều khiển</div>
+        <div class="action-col">
+          <button class="act-btn act-blend" id="btn-poke-blend-side" onclick="runPokeBlend()"><i
+              class="fa-solid fa-bolt"></i> Tạo Thẻ Pokemon</button>
+          <div class="action-row-sm">
+            <button class="act-btn act-reset" onclick="resetAll()"><i class="fa-solid fa-rotate-left"></i>
+              Reset</button>
+          </div>
+        </div>
+      </div> <!-- /#right-tab-content-pokemon -->
+
+      <!-- RIGHT SIDEBAR CONTENT: TAB 3 (BATTLE SOLO) -->
+      <div class="right-tab-content" id="right-tab-content-battle" style="display:none;">
+        <div class="section-label"><i class="fa-solid fa-sliders"></i> Ci t Solo Battle</div>
+        <div class="ctrl-card">
+          <div class="ctrl-item">
+            <label class="ctrl-lbl"><i class="fa-solid fa-clock"></i> Thi gian h i th (giy)</label>
+            <input type="number" class="ctrl-input" id="battle-step-sec" value="3.0" step="0.5" min="1" max="10" />
+          </div>
+          <div class="ctrl-item" style="margin-top:8px;">
+            <label class="ctrl-lbl"><i class="fa-solid fa-palette"></i> Mu Nn (Khi khứng c nh nn)</label>
+            <select id="right-battle-bg-style-select" class="ctrl-select" onchange="updateBattleBgStyle(this.value)">
+              <option value="solid-red">x Full Mu  (Crimson Red)</option>
+              <option value="solid-dark">: Full Mu Xm en (Dark Charcoal)</option>
+              <option value="solid-purple">🟣 Full Màu Tím Cyber (Cyber Purple)</option>
+              <option value="solid-blue">x" Full Màu Xanh Dương (Deep Blue)</option>
+              <option value="solid-gold">xx Full Màu Vàng Kim (Royal Gold)</option>
+              <option value="gradient-fire">x Full Gradient  La (Fire Arena)</option>
+            </select>
+          </div>
+          <div class="ctrl-item" style="margin-top:8px;">
+            <label class="ctrl-lbl"><i class="fa-solid fa-volume-high"></i> m thanh chm & Tn cứng</label>
+            <input type="checkbox" id="battle-sound-enable" checked />
+          </div>
+        </div>
+
+        <div class="section-label" style="margin-top:10px;"><i class="fa-solid fa-play"></i> Điều khiển</div>
+        <div class="action-col">
+          <button class="act-btn act-blend" id="btn-battle-run-side" onclick="runBattleSolo()"><i
+              class="fa-solid fa-shield-halved"></i> Bắt đầu Battle</button>
+          <div class="action-row-sm">
+            <button class="act-btn act-reset" onclick="resetBattleSolo()"><i class="fa-solid fa-rotate-left"></i>
+              Reset</button>
+          </div>
+        </div>
+      </div> <!-- /#right-tab-content-battle -->
+
+      <!-- RIGHT SIDEBAR CONTENT: TAB 5 (FLASHLIGHT) -->
+      <div class="right-tab-content" id="right-tab-content-flashlight" style="display:none;">
+        <div class="section-label"><i class="fa-solid fa-play"></i> Điều khiển</div>
+        <div class="action-col">
+          <button class="act-btn act-blend" id="btn-fl-side" onclick="startFlashlightAnimation()"><i
+              class="fa-solid fa-rocket"></i> Chạy Soi Đèn Pin</button>
+          <div class="action-row-sm">
+            <button class="act-btn act-reset" onclick="resetAll()"><i class="fa-solid fa-rotate-left"></i>
+              Reset</button>
+          </div>
+        </div>
+
+        <!-- Flashlight Beam Mode Selection -->
+        <div class="section-label"><i class="fa-solid fa-wand-magic-sparkles"></i> Kiểu chiếu Đèn Pin</div>
+        <div class="ctrl-card mb-3">
+          <select id="fl-mode-select" class="ctrl-select" onchange="updateFlashlightMode(this.value)">
+            <option value="circle">Hình tròn (Quầng sáng điểm)</option>
+            <option value="horizontal">x -  Vệt chiếu góc nền (Từ đèn pin tỏa ra)</option>
+          </select>
+        </div>
+
+        <!-- Flashlight Radius / Beam Width Configuration -->
+        <div class="section-label"><i class="fa-solid fa-expand"></i> Độ rộng vệt sáng</div>
+        <div class="ctrl-card mb-3">
+          <div class="ctrl-item">
+            <label class="ctrl-lbl">Kích thước vệt sáng (Bán kính)</label>
+            <div style="position:relative;margin-bottom:10px;">
+              <input type="number" id="fl-radius-val" min="10" max="1000" value="200"
+                oninput="updateFlashlightRadius(this.value, true)" class="ctrl-input fi-num-input"
+                
+                
+                 />
+              <span
+                class="fi-num-unit">px</span>
+            </div>
+            <div style="display:flex;align-items:center;">
+              <input type="range" id="fl-radius-range" min="10" max="350" value="200"
+                oninput="updateFlashlightRadius(this.value)" style="width:100%;" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Hand Cursor Size -->
+        <div class="section-label"><i class="fa-solid fa-hand-pointer"></i> Kích thước bàn tay </div>
+        <div class="ctrl-card mb-3">
+          <div class="ctrl-item">
+            <div style="position:relative;margin-bottom:10px;">
+              <input type="number" id="fl-hand-val" min="10" max="500" value="44"
+                oninput="updateFlashlightHandSize(this.value, true)" class="ctrl-input fi-num-input"
+                
+                
+                 />
+              <span
+                class="fi-num-unit">px</span>
+            </div>
+            <div style="display:flex;align-items:center;">
+              <input type="range" id="fl-hand-range" min="20" max="200" value="44"
+                oninput="updateFlashlightHandSize(this.value)" style="width:100%;" />
+            </div>
+          </div>
+        </div>
+      </div> <!-- /#right-tab-content-flashlight -->
+
+      <!-- RIGHT SIDEBAR CONTENT: TAB 7 (SHADOW MATCH) -->
+      <div class="right-tab-content" id="right-tab-content-shadowmatch" style="display:none;">
+        <div class="section-label"><i class="fa-solid fa-play"></i> Điều khiển</div>
+        <div class="action-col">
+          <button class="act-btn act-blend" id="btn-sm-side" onclick="startShadowMatchAnimation()"><i
+              class="fa-solid fa-rocket"></i> Chạy Tìm Ảnh Theo Bóng</button>
+          <div class="action-row-sm">
+            <button class="act-btn act-reset" onclick="resetShadowMatchPositions()"><i class="fa-solid fa-rotate-left"></i>
+              Reset vị trí</button>
+          </div>
+        </div>
+
+        <!-- Hand Cursor Size -->
+        <div class="section-label"><i class="fa-solid fa-hand-pointer"></i> Kích thước bàn tay </div>
+        <div class="ctrl-card mb-3">
+          <div class="ctrl-item">
+            <div style="position:relative;margin-bottom:10px;">
+              <input type="number" id="sm-hand-val" min="10" max="500" value="44"
+                oninput="updateShadowMatchHandSize(this.value, true)" class="ctrl-input fi-num-input"
+                
+                
+                 />
+              <span class="fi-num-unit">px</span>
+            </div>
+            <div style="display:flex;align-items:center;">
+              <input type="range" id="sm-hand-range" min="20" max="200" value="44"
+                oninput="updateShadowMatchHandSize(this.value)" style="width:100%;" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT SIDEBAR CONTENT: TAB 6 (CLIMAX AUTOMATION 15S) -->
+      <div class="right-tab-content" id="right-tab-content-climax" style="display:none;">
+        <div class="section-label"><i class="fa-solid fa-gear"></i> Cài đặt Kịch bản 15s (Climax)</div>
+        <div class="ctrl-card mb-2">
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="ctrl-lbl"><i class="fa-solid fa-user-shield"></i> Tên Nhân vật</label>
+              <input type="text" class="ctrl-input" id="climax-hero-name-input" value="POMNI" placeholder="VD: POMNI"
+                onchange="updateClimaxHeroName(this.value)" />
+            </div>
+            <div>
+              <label class="ctrl-lbl"><i class="fa-solid fa-arrow-up-right-dots"></i> Level Hero</label>
+              <input type="text" class="ctrl-input" id="climax-hero-lv-input" value="Lv 20" placeholder="VD: Lv 20" />
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-2" style="margin-top:8px;">
+            <div>
+              <label class="ctrl-lbl"><i class="fa-solid fa-skull"></i> Tên đối thủ</label>
+              <input type="text" class="ctrl-input" id="climax-opp-name-input" value="JAX" placeholder="VD: JAX" />
+            </div>
+            <div>
+              <label class="ctrl-lbl"><i class="fa-solid fa-arrow-up-right-dots"></i> Level đối thủ</label>
+              <input type="text" class="ctrl-input" id="climax-opp-lv-input" value="Lv 67" placeholder="VD: Lv 67" />
+            </div>
+          </div>
+          <div class="ctrl-item" style="margin-top:8px;">
+            <label class="ctrl-lbl"><i class="fa-solid fa-bullhorn"></i> Dòng 1: Lời kêu gọi CTA (Khổng lồ)</label>
+            <input type="text" class="ctrl-input" id="climax-cta-line1-input" value="POMNI NEEDS POWER!"
+              placeholder="Dòng 1 kêu gọi..." />
+          </div>
+          <div class="ctrl-item" style="margin-top:8px;">
+            <label class="ctrl-lbl"><i class="fa-solid fa-thumbs-up"></i> Dòng 2: Hướng dẫn Tương tác</label>
+            <input type="text" class="ctrl-input" id="climax-cta-line2-input" value="LIKE & SUBSCRIBE TO SAVE HER!"
+              placeholder="Dòng 2 tương tác..." />
+          </div>
+        </div>
+
+        <div class="section-label" style="margin-top:6px;"><i class="fa-solid fa-play"></i> Điều khiển Kịch bản</div>
+        <div class="action-col">
+          <button class="act-btn act-blend" id="btn-climax-run-side" onclick="runClimaxAutomation()"><i
+              class="fa-solid fa-bolt-lightning"></i> Khởi chạy Kịch bản 22s</button>
+          <div class="action-row-sm">
+            <button class="act-btn act-reset" onclick="resetClimaxAutomation()"><i class="fa-solid fa-rotate-left"></i>
+              Reset</button>
+          </div>
+        </div>
+      </div>
+
+      <!--  Phase Indicator  -->
+      <div class="phase-bar" id="phase-bar">
+        <!-- Dynamically generated by JS -->
+      </div>
+
+    </aside>
+
+  </div><!-- .split-layout -->
+
+  <!-- Mobile: Fullscreen Theater Overlay (chi hien thi tren mobile khi blend) -->
+  <div class="mobile-theater-overlay" id="mobile-theater-overlay">
+    <div class="mobile-theater-bar">
+      <button class="mobile-back-btn" onclick="closeMobileTheater()">
+        <i class="fa-solid fa-arrow-left"></i> Quay lại
+      </button>
+      <button class="mobile-stop-btn" onclick="resetAll()">
+        <i class="fa-solid fa-square"></i> Dừng
+      </button>
+    </div>
+    <div class="mobile-theater-content" id="mobile-theater-content">
+      <!-- Theater will be moved here on mobile -->
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script src="blend.js"></script>
+</body>
+
+</html>

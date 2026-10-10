@@ -1,0 +1,21 @@
+/**
+ * index.css – Main CSS Entry Point
+ * Imports all module stylesheets in dependency order.
+ * ① Tokens   → ② Layout  → ③ Components → ④ Theater
+ * → ⑤ Feature modules (per-tab)
+ */
+
+/* ── Core ── */
+@import url('./tokens.css');
+@import url('./layout.css');
+@import url('./components.css');
+@import url('./theater.css');
+
+/* ── Tab feature modules ── */
+@import url('./blend.css');
+@import url('./pokemon.css');
+@import url('./battle.css');
+@import url('./puzzle.css');
+@import url('./flashlight.css');
+@import url('./shadowmatch.css');
+@import url('./climax.css');

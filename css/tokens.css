@@ -1,0 +1,74 @@
+﻿/* ============================================================
+   tokens.css – Design Tokens, CSS Variables, Base Reset
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+/* ============================
+   TOKENS â€“ LIGHT THEME
+   ============================ */
+:root {
+  --bg: #f4f2ff;
+  --bg2: #ffffff;
+  --card: #ffffff;
+  --card-sh: 0 3px 14px rgba(100, 60, 200, 0.10);
+  --card-sh-h: 0 6px 24px rgba(100, 60, 200, 0.18);
+
+  --p1: #7c3aed;
+  --p2: #db2777;
+  --p3: #0891b2;
+  --p4: #d97706;
+  --p5: #059669;
+
+  --grad-v: linear-gradient(135deg, #7c3aed, #db2777);
+  --grad-c: linear-gradient(135deg, #0891b2, #7c3aed);
+  --grad-a: linear-gradient(135deg, #f59e0b, #db2777);
+  --grad-g: linear-gradient(135deg, #059669, #0891b2);
+
+  --glow-v: 0 0 20px rgba(124, 58, 237, .28);
+  --glow-p: 0 0 20px rgba(219, 39, 119, .28);
+  --glow-c: 0 0 20px rgba(8, 145, 178, .28);
+
+  --border: rgba(124, 58, 237, .14);
+  --border-h: rgba(124, 58, 237, .38);
+
+  --txt: #1e1b4b;
+  --txt2: #4c3d9e;
+  --txt3: #8b80c0;
+
+  --r: 13px;
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);
+}
+
+/* ============================
+   BASE
+   ============================ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  font-family: 'Inter', sans-serif;
+  background: var(--bg);
+  color: var(--txt);
+  height: 100vh;
+  overflow: hidden;
+  /* no scroll on body â€“ each panel scrolls independently */
+}
+
+/* Subtle bg gradient */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(ellipse 55% 40% at 15% 10%, rgba(124, 58, 237, .07) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 85% 90%, rgba(219, 39, 119, .07) 0%, transparent 60%);
+}
+

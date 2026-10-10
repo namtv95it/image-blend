@@ -1,0 +1,177 @@
+﻿/* ============================================================
+   flashlight.css – Soi Đèn Tab: Stage, Color canvas, Mask canvas
+   + Big pencil cursor (shared by flashlight/puzzle)
+   ============================================================ */
+
+/* â”€â”€ Custom Huge Pencil Mouse Cursor for Puzzle Mode â”€â”€ */
+.puzzle-theater-overlay,
+.puzzle-theater-overlay *,
+.custom-puzzle-board,
+.custom-puzzle-board *,
+.puzzle-variant-card,
+.puzzle-variant-card *,
+.puzzle-tile-cell,
+.puzzle-tile-canvas,
+#puzzle-center-slot,
+#puzzle-drop-zone {
+  cursor: none !important;
+}
+
+/* Big Pencil Follower Element (3x Size: 192px) */
+.big-pencil-cursor {
+  position: fixed;
+  width: 192px;
+  height: 192px;
+  pointer-events: none;
+  z-index: 999999;
+  transform: translate(-36px, -135px);
+  filter: drop-shadow(0 18px 36px rgba(0, 0, 0, 0.5));
+  transition: transform 0.15s ease, opacity 0.2s ease;
+  display: none;
+}
+
+.big-pencil-cursor.active {
+  display: block;
+}
+
+.big-pencil-cursor.grabbing {
+  transform: translate(-36px, -135px) scale(1.2) rotate(-18deg);
+}
+
+
+/* â”€â”€ Flashlight / Soi ÄÃ¨n Theater Mode â”€â”€ */
+.flashlight-theater-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+  z-index: 50;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+  gap: 0;
+  overflow: hidden;
+  width: 100%;
+  height: 100%;
+}
+
+.flashlight-theater-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Always hide emoji header bar in Flashlight mode */
+.flashlight-theater-overlay.show~.emoji-header-bar,
+#theater:has(.flashlight-theater-overlay.show) #emoji-header-bar {
+  display: none !important;
+}
+
+/* Top Row: 2 Cards (Vá»«a váº·n trong khung quay 9:16) */
+.flashlight-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  width: 100%;
+  margin-top: 50px;
+  flex-shrink: 0;
+}
+
+.fl-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.fl-card-wrap {
+  width: 140px;
+  height: 140px;
+  overflow: visible;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  transition: transform 0.25s ease;
+}
+
+.fl-card-wrap canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.fl-badge {
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.fl-badge-like {
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+}
+
+.fl-badge-sub {
+  background: linear-gradient(135deg, #dc2626, #ef4444);
+}
+
+/* Bottom Stage: Main Image with Mask (Vá»«a váº·n trong khung quay 9:16) */
+.flashlight-bottom-stage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+  aspect-ratio: unset !important;
+  max-height: none;
+  overflow: visible;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  cursor: pointer;
+  flex-shrink: 0;
+  touch-action: none !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -webkit-touch-callout: none !important;
+}
+
+.flashlight-bottom-stage * {
+  cursor: pointer;
+}
+
+.fl-layer-color {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: 1;
+}
+
+.fl-layer-mask {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: 2;
+}
+
+.fl-beam-ring {
+  display: none !important;
+}
+
