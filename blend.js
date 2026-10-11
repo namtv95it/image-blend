@@ -1,4 +1,4 @@
-﻿/**
+/**
  * MarbleBlend v4 – Multi-Step Sequential Blend
  *
  * FLOW:
@@ -852,6 +852,18 @@ function applyResultScale(scale) {
     resultImg.style.transform = `scale(${scale})`;
     resultImg.style.transformOrigin = 'center center';
     resultImg.style.transition = 'transform 0.15s ease-out';
+  }
+  const gridImgs = document.querySelectorAll('.final-grid-item img');
+  gridImgs.forEach(img => {
+    img.style.transform = `scale(${scale})`;
+    img.style.transformOrigin = 'center center';
+    img.style.transition = 'transform 0.15s ease-out';
+  });
+  const pokeArt = document.getElementById('poke-card-art-img');
+  if (pokeArt) {
+    pokeArt.style.transform = `scale(${scale})`;
+    pokeArt.style.transformOrigin = 'center center';
+    pokeArt.style.transition = 'transform 0.15s ease-out';
   }
 }
 
@@ -1840,6 +1852,11 @@ function showFinalGridScreen() {
     const img = document.createElement('img');
     img.src = step.resultImg.src;
     img.alt = `Result ${idx + 1}`;
+    const resScale = getResultScale();
+    if (resScale !== 1.0) {
+      img.style.transform = `scale(${resScale})`;
+      img.style.transformOrigin = 'center center';
+    }
     item.appendChild(img);
 
     if (badgeType !== 'none') {
@@ -2277,6 +2294,7 @@ function phase4() {
       resultWrap.classList.remove('reveal-eraser');
       resultWrap.classList.add('reveal-classic');
       resultImg.src = S._currentResultImg.src;
+      applyResultScale(getResultScale());
       resultWrap.classList.add('show');
       canvas.classList.remove('visible');
       canvas.style.transition = '';
