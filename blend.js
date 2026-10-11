@@ -94,6 +94,7 @@ function loadCharSlot(file) {
       document.getElementById('pimg-1').src = ev.target.result;
       // Show in theater background immediately
       bgCharImg.src = ev.target.result;
+      applyCharScale(getCharScale());
       bgCharWrap.classList.add('show');
     };
     img.src = ev.target.result;
@@ -675,10 +676,130 @@ function updateEmojiHeaderState(activeIdx) {
   });
 }
 
-/* ─────────────────────── CONTROLS ─────────────────────── */
+/* ─────────────────────── CONTROLS & SCALE ─────────────────────── */
 function syncVal(key) {
   document.getElementById(`val-${key}`).textContent =
     document.getElementById(`sl-${key}`).value;
+  saveSettings();
+}
+
+function getCharScale() {
+  const el = document.getElementById('sl-char-scale');
+  const val = el ? parseFloat(el.value) : 100;
+  return isNaN(val) ? 1.0 : val / 100;
+}
+
+function getResultScale() {
+  const el = document.getElementById('sl-result-scale');
+  const val = el ? parseFloat(el.value) : 100;
+  return isNaN(val) ? 1.0 : val / 100;
+}
+
+function applyCharScale(scale) {
+  if (bgCharImg) {
+    bgCharImg.style.transform = `scale(${scale})`;
+    bgCharImg.style.transformOrigin = 'center center';
+    bgCharImg.style.transition = 'transform 0.15s ease-out';
+  }
+  if (flyImg1) {
+    flyImg1.style.transform = `scale(${scale})`;
+    flyImg1.style.transformOrigin = 'center center';
+  }
+}
+
+function applyResultScale(scale) {
+  if (resultImg) {
+    resultImg.style.transform = `scale(${scale})`;
+    resultImg.style.transformOrigin = 'center center';
+    resultImg.style.transition = 'transform 0.15s ease-out';
+  }
+}
+
+function updateZoomPillDisplay() {
+  const pillVal = document.getElementById('theater-zoom-val');
+  if (pillVal) {
+    const charS = Math.round(getCharScale() * 100);
+    const resS = Math.round(getResultScale() * 100);
+    pillVal.textContent = charS === resS ? `${charS}%` : `${charS}% / ${resS}%`;
+  }
+}
+
+function updateCharScale(val) {
+  const num = parseInt(val, 10) || 100;
+  const numEl = document.getElementById('val-char-scale');
+  if (numEl) numEl.textContent = num + '%';
+
+  const syncCheck = document.getElementById('chk-scale-sync');
+  if (syncCheck && syncCheck.checked) {
+    const resSlider = document.getElementById('sl-result-scale');
+    const resNum = document.getElementById('val-result-scale');
+    if (resSlider) resSlider.value = num;
+    if (resNum) resNum.textContent = num + '%';
+    applyResultScale(num / 100);
+    if (typeof _blendBuf !== 'undefined') _blendBuf.resultScale = num / 100;
+  }
+
+  applyCharScale(num / 100);
+  if (typeof _blendBuf !== 'undefined') _blendBuf.charScale = num / 100;
+  updateZoomPillDisplay();
+  saveSettings();
+}
+
+function updateResultScale(val) {
+  const num = parseInt(val, 10) || 100;
+  const numEl = document.getElementById('val-result-scale');
+  if (numEl) numEl.textContent = num + '%';
+
+  const syncCheck = document.getElementById('chk-scale-sync');
+  if (syncCheck && syncCheck.checked) {
+    const charSlider = document.getElementById('sl-char-scale');
+    const charNum = document.getElementById('val-char-scale');
+    if (charSlider) charSlider.value = num;
+    if (charNum) charNum.textContent = num + '%';
+    applyCharScale(num / 100);
+    if (typeof _blendBuf !== 'undefined') _blendBuf.charScale = num / 100;
+  }
+
+  applyResultScale(num / 100);
+  if (typeof _blendBuf !== 'undefined') _blendBuf.resultScale = num / 100;
+  updateZoomPillDisplay();
+  saveSettings();
+}
+
+function setBothScales(val) {
+  const num = parseInt(val, 10) || 100;
+  const slChar = document.getElementById('sl-char-scale');
+  const slRes = document.getElementById('sl-result-scale');
+  const valChar = document.getElementById('val-char-scale');
+  const valRes = document.getElementById('val-result-scale');
+
+  if (slChar) slChar.value = num;
+  if (slRes) slRes.value = num;
+  if (valChar) valChar.textContent = num + '%';
+  if (valRes) valRes.textContent = num + '%';
+
+  applyCharScale(num / 100);
+  applyResultScale(num / 100);
+  if (typeof _blendBuf !== 'undefined') {
+    _blendBuf.charScale = num / 100;
+    _blendBuf.resultScale = num / 100;
+  }
+  updateZoomPillDisplay();
+  saveSettings();
+}
+
+function adjustScaleDelta(delta) {
+  const slChar = document.getElementById('sl-char-scale');
+  const cur = slChar ? parseInt(slChar.value, 10) : 100;
+  const target = Math.max(50, Math.min(180, cur + delta));
+  setBothScales(target);
+}
+
+function toggleScaleSync(isChecked) {
+  if (isChecked) {
+    const charS = document.getElementById('sl-char-scale')?.value || 100;
+    updateCharScale(charS);
+  }
   saveSettings();
 }
 
@@ -697,6 +818,9 @@ function saveSettings() {
     badgeType: document.getElementById('badge-type-select')?.value || 'none',
     swirl: document.getElementById('sl-swirl')?.value || '100',
     speed: document.getElementById('sl-speed')?.value || '7',
+    charScale: document.getElementById('sl-char-scale')?.value || '100',
+    resultScale: document.getElementById('sl-result-scale')?.value || '100',
+    scaleSync: document.getElementById('chk-scale-sync')?.checked ?? true,
   };
 
   try { localStorage.setItem(LS_KEY, JSON.stringify(data)); } catch (e) { }
@@ -745,6 +869,31 @@ function loadSettings() {
     const sl = document.getElementById('sl-speed');
     if (sl) { sl.value = data.speed; syncVal('speed'); }
   }
+
+  // Restore scale settings
+  if (data.charScale) {
+    const sl = document.getElementById('sl-char-scale');
+    if (sl) {
+      sl.value = data.charScale;
+      const numEl = document.getElementById('val-char-scale');
+      if (numEl) numEl.textContent = data.charScale + '%';
+    }
+  }
+  if (data.resultScale) {
+    const sl = document.getElementById('sl-result-scale');
+    if (sl) {
+      sl.value = data.resultScale;
+      const numEl = document.getElementById('val-result-scale');
+      if (numEl) numEl.textContent = data.resultScale + '%';
+    }
+  }
+  if (data.scaleSync !== undefined) {
+    const chk = document.getElementById('chk-scale-sync');
+    if (chk) chk.checked = !!data.scaleSync;
+  }
+  updateZoomPillDisplay();
+  applyCharScale(getCharScale());
+  applyResultScale(getResultScale());
 }
 
 // Auto-save when question or badge type changes — script runs after DOM so safe to hook directly
@@ -829,6 +978,7 @@ function resetAll() {
   const currentCharImg = (activeTab === 'pokemon' ? P.charImg : S.charImg);
   if (currentCharImg) {
     bgCharImg.src = currentCharImg.src;
+    applyCharScale(getCharScale());
     bgCharWrap.classList.add('show');
   }
 
@@ -1280,6 +1430,7 @@ function runChainStep(steps, idx) {
 
   // Display character in bg
   bgCharImg.src = charImgForStep.src;
+  applyCharScale(getCharScale());
   bgCharWrap.classList.add('show');
 
   flyImg1.src = charImgForStep.src;
@@ -1409,30 +1560,39 @@ function setupHeaderEmojiDrag(headerStepIdx) {
       const endX = endCoords.clientX;
       const endY = endCoords.clientY;
 
-      // 1) Must drag at least 60px total to count as intentional
+      // 1) Must drag at least 30px total to count as intentional drag (not just a click)
       const dist = Math.sqrt((endX - startX) ** 2 + (endY - startY) ** 2);
-      if (dist < 60) {
+      if (dist < 30) {
         if (theater) theater.classList.remove('drop-zone-active');
         return;
       }
 
-      // 2) Must drag downward at least 40px (from header toward theater)
-      const draggedDown = endY - startY > 40;
-      if (!draggedDown) {
-        if (theater) theater.classList.remove('drop-zone-active');
-        return;
+      const isRecording = document.body.classList.contains('recording-mode');
+
+      // 2) Check drag direction:
+      // In recording mode (fullscreen rotated -90deg): dragging "into the character" moves leftward on screen (endX < startX)
+      // In normal mode: dragging downwards towards character (endY > startY)
+      if (isRecording) {
+        // Dragging leftward by at least 25px
+        const draggedTowards = (startX - endX > 25) || (dist > 45);
+        if (!draggedTowards) {
+          if (theater) theater.classList.remove('drop-zone-active');
+          return;
+        }
+      } else {
+        const draggedDown = (endY - startY > 20) || (dist > 45);
+        if (!draggedDown) {
+          if (theater) theater.classList.remove('drop-zone-active');
+          return;
+        }
       }
 
-      // 3) Drop point must land within center 60% width of theater
+      // 3) Drop point must land within theater bounds
       const theaterRect = theater.getBoundingClientRect();
-      const tCenterX = (theaterRect.left + theaterRect.right) / 2;
-      const tHalfW = theaterRect.width * 0.30;
-      const inCenterX = endX >= tCenterX - tHalfW && endX <= tCenterX + tHalfW;
+      const inTheaterX = endX >= theaterRect.left - 60 && endX <= theaterRect.right + 60;
+      const inTheaterY = endY >= theaterRect.top - 60 && endY <= theaterRect.bottom + 60;
 
-      // 4) Drop point must land within theater height bounds
-      const inTheaterY = endY >= theaterRect.top && endY <= theaterRect.bottom;
-
-      if (!inCenterX || !inTheaterY) {
+      if (!inTheaterX || !inTheaterY) {
         if (theater) theater.classList.remove('drop-zone-active');
         return;
       }
@@ -1894,14 +2054,23 @@ function phase4() {
     resultBadge.classList.remove('show');
   }
 
-  // Pre-draw full-resolution result image cleanly onto canvas before eraser starts
+  // Pre-draw full-resolution result image cleanly onto canvas before eraser starts (with white background for transparency)
   const W = canvas.width, H = canvas.height;
   if (S._currentResultImg && W > 0 && H > 0) {
-    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+    const scale = getResultScale();
     const ar = S._currentResultImg.width / S._currentResultImg.height;
-    let sw, sh, sx, sy;
-    if (ar > W / H) { sw = W; sh = W / ar; sx = 0; sy = (H - sh) / 2; }
-    else { sh = H; sw = H * ar; sx = (W - sw) / 2; sy = 0; }
+    let sw, sh;
+    if (ar > W / H) {
+      sw = W * scale;
+      sh = (W / ar) * scale;
+    } else {
+      sh = H * scale;
+      sw = (H * ar) * scale;
+    }
+    const sx = (W - sw) / 2;
+    const sy = (H - sh) / 2;
     ctx.drawImage(S._currentResultImg, sx, sy, sw, sh);
   }
 
@@ -1913,6 +2082,7 @@ function phase4() {
     resultWrap.classList.remove('reveal-classic');
     resultWrap.classList.add('reveal-eraser');
     resultImg.src = S._currentResultImg.src;
+    applyResultScale(getResultScale());
     resultWrap.classList.add('show');
     S.chainPrev = S._currentResultImg;
     S.lastResultImg = S._currentResultImg;
@@ -1933,6 +2103,7 @@ function phase4() {
     resultWrap.classList.remove('reveal-eraser');
     resultWrap.classList.remove('reveal-classic');
     resultImg.src = S._currentResultImg.src;
+    applyResultScale(getResultScale());
     resultWrap.classList.add('show');
     canvas.classList.remove('visible');
     canvas.style.transition = '';
@@ -1993,6 +2164,7 @@ function _scheduleNextAfterReveal(pauseMs) {
       const resBadge = document.getElementById('result-badge');
       if (resBadge) resBadge.classList.remove('show');
       bgCharImg.src = S._currentResultImg.src;
+      applyCharScale(getCharScale());
       bgCharWrap.classList.add('show');
       resultWrap.classList.remove('show');
       runChainStep(allSteps, currentIdx + 1);
@@ -2570,27 +2742,38 @@ function prepareBlendBuffers(charImg, resultImg, W, H) {
     _blendBuf.outData = _blendBuf.ctxOut.createImageData(bw, bh);
   }
 
+  const charScale = getCharScale();
+  const resultScale = getResultScale();
+
   _blendBuf.w = W;
   _blendBuf.h = H;
   _blendBuf.charImg = charImg;
   _blendBuf.resultImg = resultImg;
+  _blendBuf.charScale = charScale;
+  _blendBuf.resultScale = resultScale;
 
-  const drawContain = (c, img, targetW, targetH) => {
-    c.clearRect(0, 0, targetW, targetH);
+  const drawContain = (c, img, targetW, targetH, scale = 1) => {
+    // Fill white background for transparent images
+    c.fillStyle = '#ffffff';
+    c.fillRect(0, 0, targetW, targetH);
     const ar = img.width / img.height;
-    let sw, sh, sx, sy;
+    let sw, sh;
     if (ar > targetW / targetH) {
-      sw = targetW; sh = targetW / ar; sx = 0; sy = (targetH - sh) / 2;
+      sw = targetW * scale;
+      sh = (targetW / ar) * scale;
     } else {
-      sh = targetH; sw = targetH * ar; sx = (targetW - sw) / 2; sy = 0;
+      sh = targetH * scale;
+      sw = (targetH * ar) * scale;
     }
+    const sx = (targetW - sw) / 2;
+    const sy = (targetH - sh) / 2;
     c.drawImage(img, sx, sy, sw, sh);
   };
 
   const ctxA = _blendBuf.offA.getContext('2d');
   const ctxB = _blendBuf.offB.getContext('2d');
-  drawContain(ctxA, charImg, bw, bh);
-  drawContain(ctxB, resultImg, bw, bh);
+  drawContain(ctxA, charImg, bw, bh, charScale);
+  drawContain(ctxB, resultImg, bw, bh, resultScale);
 
   _blendBuf.pxA = ctxA.getImageData(0, 0, bw, bh).data;
   _blendBuf.pxB = ctxB.getImageData(0, 0, bw, bh).data;
@@ -2601,8 +2784,13 @@ function renderFrame(progress) {
   const W = canvas.width, H = canvas.height;
   if (!S._currentCharImg || !S._currentResultImg || W <= 0 || H <= 0) return;
 
+  const charScale = getCharScale();
+  const resultScale = getResultScale();
+
   if (_blendBuf.charImg !== S._currentCharImg ||
       _blendBuf.resultImg !== S._currentResultImg ||
+      _blendBuf.charScale !== charScale ||
+      _blendBuf.resultScale !== resultScale ||
       _blendBuf.w !== W ||
       _blendBuf.h !== H) {
     prepareBlendBuffers(S._currentCharImg, S._currentResultImg, W, H);
@@ -2631,6 +2819,8 @@ function drawToOff(img, W, H) {
   const off = document.createElement('canvas');
   off.width = W; off.height = H;
   const c = off.getContext('2d');
+  c.fillStyle = '#ffffff';
+  c.fillRect(0, 0, W, H);
   const ar = img.width / img.height;
   let sw, sh, sx, sy;
   if (ar > W / H) { sw = W; sh = W / ar; sx = 0; sy = (H - sh) / 2; }
@@ -5471,6 +5661,16 @@ function switchTab(tabName) {
   });
   const targetRightContent = document.getElementById(`right-tab-content-${tabName}`);
   if (targetRightContent) targetRightContent.style.display = 'flex';
+
+  // Toggle floating theater zoom pill
+  const zoomCtrl = document.getElementById('theater-zoom-ctrl');
+  if (zoomCtrl) {
+    if (tabName === 'blend' || tabName === 'blendplus') {
+      zoomCtrl.classList.remove('hidden');
+    } else {
+      zoomCtrl.classList.add('hidden');
+    }
+  }
 
   // Specific tab initializations
   const flOverlay = document.getElementById('flashlight-theater-overlay');

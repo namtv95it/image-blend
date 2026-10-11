@@ -711,7 +711,7 @@
           <!-- Result Badge Overlay -->
           <div class="result-badge" id="result-badge"></div>
 
-          <!-- Final Grid Screen (End View) -->
+<!-- Final Grid Screen (End View) -->
           <div class="final-grid-wrap" id="final-grid-wrap">
             <div class="final-grid-top" id="final-grid-top"></div>
             <div class="final-question-box" id="final-question-box">WHICH VERSION DO YOU LIKE MOST?</div>
@@ -968,6 +968,46 @@
               <option value="numbers">Numbers (1, 2, 3, 4)</option>
               <option value="hearts">Hearts (#1, #2, #3, #4)</option>
             </select>
+          </div>
+        </div>
+
+        <!-- ── Image Scale Controls ── -->
+        <div class="section-label" style="margin-top:6px;">
+          <i class="fa-solid fa-up-right-and-down-left-from-center"></i> Kích thước hình ảnh
+        </div>
+        <div class="ctrl-card">
+          <div class="ctrl-item">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <label class="ctrl-lbl"><i class="fa-solid fa-user"></i> Nhân vật gốc</label>
+              <span class="ctrl-num" id="val-char-scale">100%</span>
+            </div>
+            <input type="range" class="ctrl-range" id="sl-char-scale" min="50" max="180" value="100"
+              oninput="updateCharScale(this.value)" />
+          </div>
+          <div class="ctrl-item">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <label class="ctrl-lbl"><i class="fa-solid fa-gift"></i> Kết quả blend</label>
+              <span class="ctrl-num" id="val-result-scale">100%</span>
+            </div>
+            <input type="range" class="ctrl-range" id="sl-result-scale" min="50" max="180" value="100"
+              oninput="updateResultScale(this.value)" />
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px;">
+            <label style="display:flex;align-items:center;gap:6px;font-size:0.75rem;color:var(--txt2);cursor:pointer;">
+              <input type="checkbox" id="chk-scale-sync" checked onchange="toggleScaleSync(this.checked)" />
+              <i class="fa-solid fa-link"></i> Khóa đồng bộ kích thước
+            </label>
+          </div>
+          <div class="scale-btn-row" style="display:flex;gap:6px;margin-top:8px;">
+            <button type="button" class="q-chip" onclick="setBothScales(100)" title="Khôi phục mặc định 100%" style="flex:1;text-align:center;">
+              <i class="fa-solid fa-rotate-left"></i> 100%
+            </button>
+            <button type="button" class="q-chip" onclick="adjustScaleDelta(10)" title="Phóng to +10%" style="flex:1;text-align:center;">
+              <i class="fa-solid fa-plus"></i> +10%
+            </button>
+            <button type="button" class="q-chip" onclick="adjustScaleDelta(-10)" title="Thu nhỏ -10%" style="flex:1;text-align:center;">
+              <i class="fa-solid fa-minus"></i> -10%
+            </button>
           </div>
         </div>
 

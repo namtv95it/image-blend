@@ -1,5 +1,5 @@
-/* ============================================================
-   theater.css � Theater (9:16 box), Recording Mode, 
+﻿/* ============================================================
+   theater.css � Theater (9:16 box), Recording Mode, 
    Emoji Header Bar, Fly Boxes, Canvas, Result Reveal, Final Grid
    ============================================================ */
 
@@ -281,15 +281,9 @@ body.recording-mode .theater {
   z-index: 1;
 }
 
-/* Stylish corner brackets for recording frame focus */
+/* Corner brackets removed */
 .theater::after {
-  content: '';
-  position: absolute;
-  inset: 12px;
-  border: 1px dashed rgba(124, 58, 237, .25);
-  border-radius: 12px;
-  pointer-events: none;
-  z-index: 1;
+  display: none;
 }
 
 /* ── Full-frame Character Layer ── */
@@ -920,3 +914,71 @@ body.recording-mode .theater {
   font-weight: 600;
 }
 
+
+
+/* ── Floating Theater Zoom Control ── */
+.theater-zoom-ctrl {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  z-index: 12;
+  display: flex;
+  align-items: center;
+  background: rgba(18, 12, 38, 0.78);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: 20px;
+  padding: 3px 6px;
+  gap: 4px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+  user-select: none;
+}
+
+.theater-zoom-ctrl.hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+}
+
+.theater-zoom-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-size: 0.72rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.15s;
+}
+
+.theater-zoom-btn:hover {
+  background: var(--p1);
+  transform: scale(1.12);
+}
+
+.theater-zoom-btn:active {
+  transform: scale(0.95);
+}
+
+.theater-zoom-val {
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  min-width: 42px;
+  text-align: center;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.theater-zoom-val:hover {
+  background: rgba(255, 255, 255, 0.15);
+  color: #c4b5fd;
+}

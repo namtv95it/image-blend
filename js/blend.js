@@ -1716,22 +1716,29 @@ function prepareBlendBuffers(charImg, resultImg, W, H) {
     _blendBuf.outData = _blendBuf.ctxOut.createImageData(bw, bh);
   }
 
+  const charScale = (typeof getCharScale === 'function') ? getCharScale() : 1.0;
+  const resultScale = (typeof getResultScale === 'function') ? getResultScale() : 1.0;
+
   _blendBuf.w = W; _blendBuf.h = H;
   _blendBuf.charImg = charImg; _blendBuf.resultImg = resultImg;
+  _blendBuf.charScale = charScale; _blendBuf.resultScale = resultScale;
 
-  const drawContain = (c, img, targetW, targetH) => {
-    c.clearRect(0, 0, targetW, targetH);
+  const drawContain = (c, img, targetW, targetH, scale = 1) => {
+    c.fillStyle = '#ffffff';
+    c.fillRect(0, 0, targetW, targetH);
     const ar = img.width / img.height;
-    let sw, sh, sx, sy;
-    if (ar > targetW / targetH) { sw = targetW; sh = targetW / ar; sx = 0; sy = (targetH - sh) / 2; }
-    else { sh = targetH; sw = targetH * ar; sx = (targetW - sw) / 2; sy = 0; }
+    let sw, sh;
+    if (ar > targetW / targetH) { sw = targetW * scale; sh = (targetW / ar) * scale; }
+    else { sh = targetH * scale; sw = (targetH * ar) * scale; }
+    const sx = (targetW - sw) / 2;
+    const sy = (targetH - sh) / 2;
     c.drawImage(img, sx, sy, sw, sh);
   };
 
   const ctxA = _blendBuf.offA.getContext('2d');
   const ctxB = _blendBuf.offB.getContext('2d');
-  drawContain(ctxA, charImg, bw, bh);
-  drawContain(ctxB, resultImg, bw, bh);
+  drawContain(ctxA, charImg, bw, bh, charScale);
+  drawContain(ctxB, resultImg, bw, bh, resultScale);
 
   _blendBuf.pxA = ctxA.getImageData(0, 0, bw, bh).data;
   _blendBuf.pxB = ctxB.getImageData(0, 0, bw, bh).data;
@@ -1741,8 +1748,13 @@ function renderFrame(progress) {
   const W = canvas.width, H = canvas.height;
   if (!S._currentCharImg || !S._currentResultImg || W <= 0 || H <= 0) return;
 
+  const charScale = (typeof getCharScale === 'function') ? getCharScale() : 1.0;
+  const resultScale = (typeof getResultScale === 'function') ? getResultScale() : 1.0;
+
   if (_blendBuf.charImg !== S._currentCharImg ||
       _blendBuf.resultImg !== S._currentResultImg ||
+      _blendBuf.charScale !== charScale ||
+      _blendBuf.resultScale !== resultScale ||
       _blendBuf.w !== W || _blendBuf.h !== H) {
     prepareBlendBuffers(S._currentCharImg, S._currentResultImg, W, H);
   }
