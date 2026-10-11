@@ -43,6 +43,8 @@ function syncStepsFromGallery() {
 /* â”€â”€ Helper: attach per-column drag events to an image wrap â”€â”€ */
 function attachColDrag(wrap, col, idx, cell, arr, renderCb = null) {
   wrap.draggable = true;
+  wrap.dataset.col = col;
+  wrap.dataset.idx = idx;
 
   wrap.addEventListener('dragstart', e => {
     e.stopPropagation();
@@ -61,13 +63,11 @@ function attachColDrag(wrap, col, idx, cell, arr, renderCb = null) {
     G.dragColIdx = null;
   });
 
-  // Accept drops on the parent cell
   cell.addEventListener('dragover', e => {
     if (e.dataTransfer.types.includes('Files')) return;
     if (G.dragCol !== col || G.dragColIdx === idx) return;
     e.preventDefault();
     e.stopPropagation();
-    // Clear other highlights then highlight this cell
     document.querySelectorAll('.bt-cell-over, .drag-over').forEach(c => c.classList.remove('bt-cell-over', 'drag-over'));
     cell.classList.add('bt-cell-over');
     wrap.classList.add('drag-over');
@@ -98,6 +98,127 @@ function attachColDrag(wrap, col, idx, cell, arr, renderCb = null) {
       syncStepsFromGallery();
     }
   });
+
+  // Mobile touch drag
+  let touchGhost = null;
+  let touchStartX = 0;
+  let touchStartY = 0;
+  let isDragging = false;
+
+  const onTouchStart = (e) => {
+    if (e.touches.length !== 1 || e.target.closest('.bt-img-del, .bp-img-del')) return;
+    const touch = e.touches[0];
+    touchStartX = touch.clientX;
+    touchStartY = touch.clientY;
+    isDragging = false;
+
+    const onTouchMove = (moveEv) => {
+      const curTouch = moveEv.touches[0];
+      const dx = curTouch.clientX - touchStartX;
+      const dy = curTouch.clientY - touchStartY;
+
+      if (!isDragging) {
+        if (Math.sqrt(dx * dx + dy * dy) > 8) {
+          isDragging = true;
+          G.dragCol = col;
+          G.dragColIdx = idx;
+          wrap.classList.add('bt-col-dragging');
+
+          const rect = wrap.getBoundingClientRect();
+          touchGhost = wrap.cloneNode(true);
+          const delBtn = touchGhost.querySelector('.bt-img-del, .bp-img-del');
+          if (delBtn) delBtn.remove();
+          touchGhost.className += ' touch-drag-ghost';
+          touchGhost.style.cssText = `
+            position: fixed;
+            left: ${rect.left}px;
+            top: ${rect.top}px;
+            width: ${rect.width}px;
+            height: ${rect.height}px;
+            pointer-events: none;
+            z-index: 999999;
+            transform: scale(1.1);
+            opacity: 0.9;
+            box-shadow: 0 10px 25px rgba(124, 58, 237, 0.5);
+            transition: none;
+          `;
+          document.body.appendChild(touchGhost);
+        } else {
+          return;
+        }
+      }
+
+      if (moveEv.cancelable) moveEv.preventDefault();
+
+      if (touchGhost) {
+        touchGhost.style.left = (curTouch.clientX - wrap.offsetWidth / 2) + 'px';
+        touchGhost.style.top = (curTouch.clientY - wrap.offsetHeight / 2) + 'px';
+      }
+
+      touchGhost.style.display = 'none';
+      const elemUnder = document.elementFromPoint(curTouch.clientX, curTouch.clientY);
+      touchGhost.style.display = '';
+
+      document.querySelectorAll('.bt-cell-over, .drag-over').forEach(c => c.classList.remove('bt-cell-over', 'drag-over'));
+
+      if (elemUnder) {
+        const targetWrap = elemUnder.closest(`.bt-img-wrap[data-col="${col}"], .bp-img-wrap[data-col="${col}"]`);
+        if (targetWrap && targetWrap !== wrap) {
+          targetWrap.classList.add('drag-over');
+          const pCell = targetWrap.closest('.bt-cell, .bp-cell');
+          if (pCell) pCell.classList.add('bt-cell-over');
+        }
+      }
+    };
+
+    const onTouchEnd = (endEv) => {
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('touchend', onTouchEnd);
+      window.removeEventListener('touchcancel', onTouchEnd);
+
+      if (touchGhost) {
+        touchGhost.remove();
+        touchGhost = null;
+      }
+      wrap.classList.remove('bt-col-dragging');
+
+      if (!isDragging) return;
+      isDragging = false;
+
+      const curTouch = endEv.changedTouches[0];
+      const elemUnder = document.elementFromPoint(curTouch.clientX, curTouch.clientY);
+      document.querySelectorAll('.bt-cell-over, .drag-over').forEach(c => c.classList.remove('bt-cell-over', 'drag-over'));
+
+      if (elemUnder) {
+        const targetWrap = elemUnder.closest(`.bt-img-wrap[data-col="${col}"], .bp-img-wrap[data-col="${col}"]`);
+        if (targetWrap && targetWrap !== wrap) {
+          const targetIdx = parseInt(targetWrap.dataset.idx, 10);
+          if (!isNaN(targetIdx) && targetIdx !== idx) {
+            const [moved] = arr.splice(idx, 1);
+            arr.splice(targetIdx, 0, moved);
+            G.dragCol = null;
+            G.dragColIdx = null;
+            if (typeof renderCb === 'function') {
+              renderCb();
+            } else {
+              renderBlendTable();
+              syncStepsFromGallery();
+            }
+            return;
+          }
+        }
+      }
+
+      G.dragCol = null;
+      G.dragColIdx = null;
+    };
+
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onTouchEnd);
+    window.addEventListener('touchcancel', onTouchEnd);
+  };
+
+  wrap.addEventListener('touchstart', onTouchStart, { passive: true });
 }
 
 function attachCellDropTarget(cell, col, idx, arr, renderCb = null) {
@@ -1039,19 +1160,36 @@ function doCollisionFlash() {
 }
 
 function startSwirlLoop() {
+  if (S.animId) {
+    cancelAnimationFrame(S.animId);
+    S.animId = null;
+  }
   S.time = 0;
-  let elapsed = 0;
-  const totalMs = 1800;
-  const speed = parseFloat(document.getElementById('sl-speed').value);
+  const totalMs = (typeof getSwirlDurationMs === 'function') ? getSwirlDurationMs() : 1800;
+  const speed = parseFloat(document.getElementById('sl-speed')?.value || '7') || 7;
+  const startTime = performance.now();
+  let lastTime = startTime;
 
-  function loop() {
-    if (!S.running) return;
+  function loop(now) {
+    if (!S.running) {
+      S.animId = null;
+      return;
+    }
+    const dt = Math.min(100, now - lastTime);
+    lastTime = now;
+
+    const elapsed = now - startTime;
     const progress = Math.min(1, elapsed / totalMs);
     renderFrame(progress);
-    S.time += speed * 0.14;
-    elapsed += 16 * (speed / 3.5);
-    if (elapsed < totalMs) S.animId = requestAnimationFrame(loop);
-    else phase4();
+
+    S.time += (dt / 16.67) * (speed * 0.14);
+
+    if (elapsed < totalMs) {
+      S.animId = requestAnimationFrame(loop);
+    } else {
+      S.animId = null;
+      phase4();
+    }
   }
   S.animId = requestAnimationFrame(loop);
 }

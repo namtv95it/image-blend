@@ -982,3 +982,24 @@ body.recording-mode .theater {
   background: rgba(255, 255, 255, 0.15);
   color: #c4b5fd;
 }
+
+/* Mobile Touch Drag Ghost and Touch-Action for Image Reordering */
+.bt-img-wrap, .bp-img-wrap {
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.touch-drag-ghost {
+  z-index: 999999 !important;
+  pointer-events: none !important;
+  box-shadow: 0 12px 28px rgba(124, 58, 237, 0.6) !important;
+  border: 2px solid var(--p1) !important;
+  border-radius: 10px !important;
+}
+
+.bt-img-wrap.bt-col-dragging,
+.bp-img-wrap.bt-col-dragging {
+  opacity: 0.3 !important;
+  transform: scale(0.92) !important;
+}
