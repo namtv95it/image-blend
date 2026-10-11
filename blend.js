@@ -683,6 +683,19 @@ function syncVal(key) {
   saveSettings();
 }
 
+function syncDurationVal(val) {
+  const num = parseFloat(val) || 1.8;
+  const numEl = document.getElementById('val-duration');
+  if (numEl) numEl.textContent = num.toFixed(1) + 's';
+  saveSettings();
+}
+
+function getSwirlDurationMs() {
+  const el = document.getElementById('sl-duration');
+  const sec = el ? parseFloat(el.value) : 1.8;
+  return Math.max(300, Math.round((isNaN(sec) ? 1.8 : sec) * 1000));
+}
+
 function getCharScale() {
   const el = document.getElementById('sl-char-scale');
   const val = el ? parseFloat(el.value) : 100;
@@ -818,6 +831,7 @@ function saveSettings() {
     badgeType: document.getElementById('badge-type-select')?.value || 'none',
     swirl: document.getElementById('sl-swirl')?.value || '100',
     speed: document.getElementById('sl-speed')?.value || '7',
+    duration: document.getElementById('sl-duration')?.value || '1.8',
     charScale: document.getElementById('sl-char-scale')?.value || '100',
     resultScale: document.getElementById('sl-result-scale')?.value || '100',
     scaleSync: document.getElementById('chk-scale-sync')?.checked ?? true,
@@ -868,6 +882,13 @@ function loadSettings() {
   if (data.speed) {
     const sl = document.getElementById('sl-speed');
     if (sl) { sl.value = data.speed; syncVal('speed'); }
+  }
+  if (data.duration) {
+    const sl = document.getElementById('sl-duration');
+    if (sl) {
+      sl.value = data.duration;
+      syncDurationVal(data.duration);
+    }
   }
 
   // Restore scale settings
@@ -2021,7 +2042,7 @@ function startSwirlLoop() {
   }
   S.time = 0;
   let elapsed = 0;
-  const totalMs = 1800;
+  const totalMs = getSwirlDurationMs();
   const speed = parseFloat(document.getElementById('sl-speed').value);
 
   function loop() {

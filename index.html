@@ -1027,6 +1027,12 @@
             <input type="range" class="ctrl-range" id="sl-speed" min="1" max="10" value="7"
               oninput="syncVal('speed')" />
           </div>
+          <div class="ctrl-item">
+            <label class="ctrl-lbl"><i class="fa-solid fa-clock"></i> Thời gian xoáy <span class="ctrl-num"
+                id="val-duration">1.8s</span></label>
+            <input type="range" class="ctrl-range" id="sl-duration" min="0.5" max="6.0" step="0.1" value="1.8"
+              oninput="syncDurationVal(this.value)" />
+          </div>
         </div>
 
         <!-- ── Action Buttons ── -->
